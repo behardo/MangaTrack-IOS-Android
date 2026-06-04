@@ -14,12 +14,7 @@
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
     html{-webkit-text-size-adjust:100%;height:100%}
     body{height:100%;background:#0d0d0d;color:#f0f0f0;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;overflow:hidden;-webkit-overflow-scrolling:touch}
-    :root{
-      --bg:#0d0d0d;--surface:#1a1a1a;--card:#1f1f1f;--border:#2a2a2a;
-      --red:#c0392b;--redl:#e74c3c;--redd:#7b1d13;
-      --text:#f0f0f0;--muted:#888;--dim:#444;
-      --safe-top:env(safe-area-inset-top,0px);--safe-bot:env(safe-area-inset-bottom,0px);
-    }
+    :root{--bg:#0d0d0d;--surface:#1a1a1a;--card:#1f1f1f;--border:#2a2a2a;--red:#c0392b;--redl:#e74c3c;--redd:#7b1d13;--text:#f0f0f0;--muted:#888;--dim:#444;--safe-top:env(safe-area-inset-top,0px);--safe-bot:env(safe-area-inset-bottom,0px)}
     ::-webkit-scrollbar{display:none}
     input,textarea,button,select{font-family:inherit;-webkit-appearance:none;appearance:none}
     button{cursor:pointer;border:none;background:none;color:inherit}
@@ -36,7 +31,7 @@
     .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:9px 0 5px;color:var(--muted);font-size:9px;font-weight:500;gap:3px;transition:color .15s}
     .nav-item.active{color:var(--red);font-weight:700}
     .nav-item:active{transform:scale(.9)}
-    .nav-icon{font-size:22px;line-height:1}
+    .nav-icon{font-size:20px;line-height:1}
     .card{background:var(--card);border-radius:14px;border:1px solid var(--border);padding:14px;margin-bottom:10px}
     .card-tap{cursor:pointer;transition:transform .15s,background .15s}
     .card-tap:active{transform:scale(.98);background:#252525}
@@ -50,6 +45,7 @@
     .btn-primary{background:var(--red);color:#fff;border-color:var(--red)}
     .btn-primary:active{background:#a93226}
     .btn-danger{background:transparent;color:var(--redl);border-color:#e74c3c33}
+    .btn-sm{padding:7px 14px;font-size:12px;border-radius:10px}
     .btn-block{width:100%}
     .badge{border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;white-space:nowrap;border:1px solid}
     .badge-sm{font-size:10px;padding:2px 8px}
@@ -66,32 +62,30 @@
     .stat-val{font-size:28px;font-weight:900;color:var(--red)}
     .chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px;-webkit-overflow-scrolling:touch}
     .chip{background:var(--surface);color:var(--muted);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:11px;font-weight:600;white-space:nowrap;flex-shrink:0;transition:all .15s}
-    .chip:active{transform:scale(.94)}
     .chip.active{background:var(--red);color:#fff;border-color:var(--red)}
     .sort-pills{display:flex;gap:6px;margin-bottom:12px}
-    .sort-pill{background:var(--surface);color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:5px 12px;font-size:11px;font-weight:500;transition:all .15s}
+    .sort-pill{background:var(--surface);color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:5px 12px;font-size:11px;transition:all .15s}
     .sort-pill.active{background:var(--redd);color:var(--red);border-color:var(--red)}
     .manga-row{display:flex;gap:12px;align-items:flex-start}
-    #auth-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;z-index:200;gap:0}
+    #auth-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;z-index:200}
     .auth-logo{font-weight:900;font-size:36px;color:var(--red);letter-spacing:2px;margin-bottom:4px}
     .auth-logo span{color:var(--text)}
-    .auth-sub{font-size:12px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;margin-bottom:40px}
+    .auth-sub{font-size:12px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;margin-bottom:32px}
     .auth-card{background:var(--card);border-radius:18px;border:1px solid var(--border);padding:24px;width:100%;max-width:360px}
-    .auth-tabs{display:flex;gap:0;margin-bottom:20px;background:var(--surface);border-radius:10px;padding:3px}
+    .auth-tabs{display:flex;margin-bottom:20px;background:var(--surface);border-radius:10px;padding:3px}
     .auth-tab{flex:1;padding:8px;font-size:13px;font-weight:600;border-radius:8px;color:var(--muted);transition:all .2s;text-align:center}
     .auth-tab.active{background:var(--red);color:#fff}
     .auth-field{margin-bottom:12px}
     .auth-field label{font-size:12px;color:var(--muted);margin-bottom:5px;display:block;font-weight:600}
     .divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--muted);font-size:12px}
     .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
-    .google-btn{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;width:100%;font-size:14px;font-weight:600;color:var(--text);display:flex;align-items:center;justify-content:center;gap:10px;transition:all .15s}
-    .google-btn:active{transform:scale(.97)}
+    .google-btn{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;width:100%;font-size:14px;font-weight:600;color:var(--text);display:flex;align-items:center;justify-content:center;gap:10px}
     .auth-err{background:#e74c3c18;border:1px solid #e74c3c44;border-radius:10px;padding:10px 12px;font-size:13px;color:var(--redl);margin-bottom:12px;display:none}
     #loader{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:400;flex-direction:column;gap:12px}
     .spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
-    .empty{color:var(--muted);text-align:center;padding:50px 0;font-size:14px}
-    .empty-icon{font-size:48px;margin-bottom:14px;display:block}
+    .empty{color:var(--muted);text-align:center;padding:40px 0;font-size:14px}
+    .empty-icon{font-size:44px;margin-bottom:12px;display:block}
     .legend-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
     .legend-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
     .toggle-track{width:50px;height:30px;border-radius:15px;background:var(--dim);position:relative;transition:background .25s;flex-shrink:0}
@@ -106,7 +100,6 @@
     .status-btn-icon{font-size:18px;line-height:1}
     .status-btn-label{font-size:12px;font-weight:700}
     .status-btn-desc{font-size:10px;opacity:.7;font-weight:400}
-
     /* PREVIEW MODAL */
     #preview-modal{position:fixed;inset:0;background:#000a;z-index:100;display:none;align-items:flex-end;justify-content:center}
     #preview-modal.open{display:flex}
@@ -114,6 +107,20 @@
     @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
     .preview-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 16px}
     .preview-body{padding:0 18px}
+    /* AVATAR */
+    .avatar{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0;color:#fff}
+    /* ACTIVITY ITEM */
+    .act-item{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border)}
+    .act-item:last-child{border-bottom:none}
+    /* USER CARD */
+    .user-card{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+    .user-card:last-child{border-bottom:none}
+    /* NOTIFICATION DOT */
+    .notif-dot{width:8px;height:8px;background:var(--red);border-radius:50%;position:absolute;top:6px;right:8px}
+    /* TABS inside page */
+    .page-tabs{display:flex;background:var(--surface);border-radius:12px;padding:3px;margin-bottom:14px;gap:2px}
+    .page-tab{flex:1;padding:8px;font-size:12px;font-weight:600;border-radius:10px;color:var(--muted);text-align:center;transition:all .2s}
+    .page-tab.active{background:var(--red);color:#fff}
   </style>
 </head>
 <body>
@@ -128,14 +135,26 @@
       <button class="auth-tab" onclick="setAuthTab('register')">Registrati</button>
     </div>
     <div id="auth-err" class="auth-err"></div>
+    <div id="auth-username-field" class="auth-field" style="display:none"><label>Username</label><input type="text" id="auth-username" placeholder="es. behar99" autocomplete="username"/></div>
     <div class="auth-field"><label>Email</label><input type="email" id="auth-email" placeholder="email@esempio.com" autocomplete="email"/></div>
     <div class="auth-field"><label>Password</label><input type="password" id="auth-pass" placeholder="••••••••" autocomplete="current-password"/></div>
     <button class="btn btn-primary btn-block" id="auth-submit-btn" onclick="submitAuth()" style="margin-bottom:4px">Accedi</button>
     <div class="divider">oppure</div>
-    <button class="google-btn" onclick="loginGoogle()">
+    <button class="google-btn" onclick="signInGoogle()">
       <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.14 0 5.95 1.08 8.17 2.84l6.1-6.1C34.46 2.99 29.5 1 24 1 14.82 1 7.07 6.48 3.68 14.2l7.11 5.52C12.4 13.6 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.52 24.5c0-1.64-.15-3.22-.42-4.75H24v9h12.7c-.55 2.98-2.2 5.5-4.68 7.2l7.18 5.58C43.19 37.53 46.52 31.47 46.52 24.5z"/><path fill="#FBBC05" d="M10.79 28.28A14.56 14.56 0 0 1 9.5 24c0-1.49.26-2.93.72-4.28l-7.11-5.52A23.94 23.94 0 0 0 0 24c0 3.86.93 7.5 2.57 10.72l8.22-6.44z"/><path fill="#34A853" d="M24 47c5.5 0 10.12-1.82 13.49-4.94l-7.18-5.58C28.5 37.86 26.38 38.5 24 38.5c-6.26 0-11.6-4.1-13.21-9.72l-8.22 6.44C6.07 43.52 14.45 47 24 47z"/></svg>
       Continua con Google
     </button>
+  </div>
+</div>
+
+<!-- USERNAME SETUP (prima volta Google) -->
+<div id="username-screen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:150;align-items:center;justify-content:center;padding:32px 24px;flex-direction:column;">
+  <div class="auth-logo" style="margin-bottom:8px;">MANGA<span>TRACK</span></div>
+  <div style="font-size:14px;color:var(--muted);margin-bottom:32px;text-align:center;">Scegli il tuo username per iniziare</div>
+  <div class="auth-card">
+    <div id="username-err" class="auth-err"></div>
+    <div class="auth-field"><label>Username</label><input type="text" id="setup-username" placeholder="es. behar99" autocomplete="username"/></div>
+    <button class="btn btn-primary btn-block" onclick="setupUsername()">Continua →</button>
   </div>
 </div>
 
@@ -147,13 +166,27 @@
   </div>
 </div>
 
+<!-- RECOMMEND MODAL -->
+<div id="rec-modal" style="position:fixed;inset:0;background:#000a;z-index:110;display:none;align-items:flex-end;justify-content:center;">
+  <div style="background:var(--surface);border-radius:22px 22px 0 0;width:100%;max-width:430px;padding:0 18px calc(var(--safe-bot)+16px);animation:slideUp .28s ease">
+    <div class="preview-handle"></div>
+    <div style="font-weight:800;font-size:16px;margin-bottom:4px;" id="rec-title">Consiglia manga</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px;" id="rec-sub"></div>
+    <div class="auth-field"><label>Messaggio (opzionale)</label><textarea id="rec-msg" rows="3" placeholder="Dovresti assolutamente leggere questo..."></textarea></div>
+    <button class="btn btn-primary btn-block" onclick="sendRecommendation()" style="margin-bottom:8px">Invia consiglio 📨</button>
+    <button class="btn btn-block" onclick="closeRecModal()">Annulla</button>
+  </div>
+</div>
+
 <div id="app" style="display:none">
   <div id="header">
-    <div class="logo">MANGA<span>TRACK</span></div>
-    <div class="logo-sub">La tua libreria manga</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div><div class="logo">MANGA<span>TRACK</span></div><div class="logo-sub">La tua libreria manga</div></div>
+      <div id="header-avatar"></div>
+    </div>
   </div>
   <div id="back-header">
-    <button id="back-btn" onclick="closeDetail()">← Indietro</button>
+    <button id="back-btn" onclick="goBack()">← Indietro</button>
     <span id="back-title"></span>
   </div>
   <div id="content"></div>
@@ -161,48 +194,53 @@
     <button class="nav-item active" data-tab="home" onclick="switchTab('home')"><span class="nav-icon">⊞</span>Home</button>
     <button class="nav-item" data-tab="library" onclick="switchTab('library')"><span class="nav-icon">◫</span>Libreria</button>
     <button class="nav-item" data-tab="search" onclick="switchTab('search')"><span class="nav-icon">◎</span>Cerca</button>
-    <button class="nav-item" data-tab="stats" onclick="switchTab('stats')"><span class="nav-icon">◈</span>Stats</button>
+    <button class="nav-item" data-tab="social" onclick="switchTab('social')" style="position:relative"><span class="nav-icon">👥</span>Social<span id="social-dot" style="display:none;position:absolute;top:6px;right:10px;width:8px;height:8px;background:var(--red);border-radius:50%;"></span></button>
     <button class="nav-item" data-tab="settings" onclick="switchTab('settings')"><span class="nav-icon">◧</span>Impost.</button>
   </nav>
 </div>
-
 <div id="toast"></div>
 
 <script>
-const SB_URL="https://afkreberztrjuuhaifkr.supabase.co";
-const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFma3JlYmVyenRyanV1aGFpZmtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NDk0MjksImV4cCI6MjA5NjEyNTQyOX0.wpiOO4AwT6HtY18o1e2DV8BbF46vWT8SIXxfunD3kA4";
+const SB="https://afkreberztrjuuhaifkr.supabase.co";
+const KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFma3JlYmVyenRyanV1aGFpZmtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NDk0MjksImV4cCI6MjA5NjEyNTQyOX0.wpiOO4AwT6HtY18o1e2DV8BbF46vWT8SIXxfunD3kA4";
 let session=null;
 
-async function sbFetch(path,opts={}){
-  const h={"apikey":SB_KEY,"Content-Type":"application/json",...opts.headers};
+async function sb(path,opts={}){
+  const h={"apikey":KEY,"Content-Type":"application/json",...opts.headers};
   if(session?.access_token)h["Authorization"]="Bearer "+session.access_token;
-  const r=await fetch(SB_URL+path,{...opts,headers:h});
+  const r=await fetch(SB+path,{...opts,headers:h});
   if(!r.ok&&r.status!==204){const e=await r.json().catch(()=>({}));throw new Error(e.error_description||e.message||e.msg||"Errore")}
   if(r.status===204)return null;
   return r.json();
 }
 
-async function signUp(e,p){return sbFetch("/auth/v1/signup",{method:"POST",body:JSON.stringify({email:e,password:p})})}
-async function signIn(e,p){return sbFetch("/auth/v1/token?grant_type=password",{method:"POST",body:JSON.stringify({email:e,password:p})})}
-async function signInGoogle(){window.location.href=`${SB_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(location.origin)}`}
-async function signOut(){await sbFetch("/auth/v1/logout",{method:"POST"}).catch(()=>{});session=null;localStorage.removeItem("mt_session")}
-async function refreshSession(rt){return sbFetch("/auth/v1/token?grant_type=refresh_token",{method:"POST",body:JSON.stringify({refresh_token:rt})})}
+// AUTH
+async function authSignIn(e,p){return sb("/auth/v1/token?grant_type=password",{method:"POST",body:JSON.stringify({email:e,password:p})})}
+async function authSignUp(e,p){return sb("/auth/v1/signup",{method:"POST",body:JSON.stringify({email:e,password:p})})}
+function signInGoogle(){window.location.href=`${SB}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(location.origin)}`}
+async function authSignOut(){await sb("/auth/v1/logout",{method:"POST"}).catch(()=>{});session=null;localStorage.removeItem("mt_s")}
+async function refreshSess(rt){return sb("/auth/v1/token?grant_type=refresh_token",{method:"POST",body:JSON.stringify({refresh_token:rt})})}
 
-async function dbGet(){return sbFetch("/rest/v1/library?select=*&order=created_at.desc")}
-async function dbInsert(m){return sbFetch("/rest/v1/library",{method:"POST",headers:{"Prefer":"return=representation"},body:JSON.stringify({...m,user_id:session.user.id})})}
-async function dbUpdate(id,f){return sbFetch(`/rest/v1/library?id=eq.${id}`,{method:"PATCH",headers:{"Prefer":"return=representation"},body:JSON.stringify(f)})}
-async function dbDelete(id){return sbFetch(`/rest/v1/library?id=eq.${id}`,{method:"DELETE"})}
+// DB helpers
+async function dbQ(table,query=""){return sb(`/rest/v1/${table}?${query}`)}
+async function dbIns(table,data){return sb(`/rest/v1/${table}`,{method:"POST",headers:{"Prefer":"return=representation"},body:JSON.stringify(data)})}
+async function dbUpd(table,match,data){return sb(`/rest/v1/${table}?${match}`,{method:"PATCH",headers:{"Prefer":"return=representation"},body:JSON.stringify(data)})}
+async function dbDel(table,match){return sb(`/rest/v1/${table}?${match}`,{method:"DELETE"})}
 
+// STATE
 const STATUS=["In lettura","Completati","In pausa","Abbandonati","Da leggere"];
 const SC={"In lettura":"#e74c3c","Completati":"#27ae60","In pausa":"#f39c12","Abbandonati":"#7f8c8d","Da leggere":"#3498db"};
 const GC=["#e74c3c","#3498db","#27ae60","#f39c12","#9b59b6","#1abc9c","#e67e22","#2980b9"];
+const AVATAR_COLORS=["#c0392b","#2980b9","#27ae60","#8e44ad","#d35400","#16a085"];
+const STATUS_META={"In lettura":{icon:"📖",desc:"Stai leggendo"},"Completati":{icon:"✅",desc:"Finito"},"In pausa":{icon:"⏸️",desc:"In sospeso"},"Abbandonati":{icon:"🚫",desc:"Lasciato perdere"},"Da leggere":{icon:"🔖",desc:"Lista desideri"}};
 
-let library=[];
-let tab="home",detail=null;
+let library=[], myProfile=null;
+let tab="home", detail=null, backStack=[];
 let libFilter="Tutti",libSort="title",libSearch="";
 let searchQ="",searchResults=[],searching=false,searchTimer=null;
-let nsfwOn=false,authTab="login";
-let previewManga=null;
+let socialTab="feed", viewingUser=null;
+let previewManga=null, recTarget=null, recManga=null;
+let pendingRecs=0;
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 async function init(){
@@ -210,39 +248,70 @@ async function init(){
   if(hash.includes("access_token")){
     const p=new URLSearchParams(hash.slice(1));
     session={access_token:p.get("access_token"),refresh_token:p.get("refresh_token"),user:null};
-    const u=await sbFetch("/auth/v1/user").catch(()=>null);
-    if(u){session.user=u;localStorage.setItem("mt_session",JSON.stringify(session))}
+    const u=await sb("/auth/v1/user").catch(()=>null);
+    if(u){session.user=u;localStorage.setItem("mt_s",JSON.stringify(session))}
     history.replaceState(null,"",location.pathname);
   }
   if(!session){
-    const saved=localStorage.getItem("mt_session");
+    const saved=localStorage.getItem("mt_s");
     if(saved){
       try{
         session=JSON.parse(saved);
-        const r=await refreshSession(session.refresh_token).catch(()=>null);
-        if(r?.access_token){session={...r,user:r.user};localStorage.setItem("mt_session",JSON.stringify(session))}
-        else{session=null;localStorage.removeItem("mt_session")}
+        const r=await refreshSess(session.refresh_token).catch(()=>null);
+        if(r?.access_token){session={...r,user:r.user};localStorage.setItem("mt_s",JSON.stringify(session))}
+        else{session=null;localStorage.removeItem("mt_s")}
       }catch{session=null}
     }
   }
   document.getElementById("loader").style.display="none";
-  if(session?.access_token){showApp();await loadLibrary()}
-  else showAuth();
+  if(!session?.access_token){showAuth();return}
+  // load profile
+  const profiles=await dbQ("profiles",`id=eq.${session.user.id}&select=*`).catch(()=>[]);
+  if(!profiles||profiles.length===0){
+    // need username setup
+    document.getElementById("username-screen").style.display="flex";
+    return;
+  }
+  myProfile=profiles[0];
+  await startApp();
+}
+
+async function startApp(){
+  showApp();
+  updateHeaderAvatar();
+  await Promise.all([loadLibrary(), checkPendingRecs()]);
 }
 
 function showAuth(){document.getElementById("auth-screen").style.display="flex";document.getElementById("app").style.display="none"}
-function showApp(){document.getElementById("auth-screen").style.display="none";document.getElementById("app").style.display="flex"}
+function showApp(){document.getElementById("auth-screen").style.display="none";document.getElementById("username-screen").style.display="none";document.getElementById("app").style.display="flex"}
+
+function updateHeaderAvatar(){
+  if(!myProfile)return;
+  const el=document.getElementById("header-avatar");
+  const initials=(myProfile.username||"?")[0].toUpperCase();
+  el.innerHTML=`<div class="avatar" style="width:34px;height:34px;font-size:14px;background:${myProfile.avatar_color};cursor:pointer;" onclick="switchTab('settings')">${initials}</div>`;
+}
 
 async function loadLibrary(){
-  try{library=await dbGet()||[]}catch{library=[]}
+  try{library=await dbQ("library","select=*&order=created_at.desc")||[]}catch{library=[]}
   render();
 }
 
-// ─── AUTH ─────────────────────────────────────────────────────────────────────
+async function checkPendingRecs(){
+  try{
+    const recs=await dbQ("recommendations",`to_id=eq.${session.user.id}&select=id`)||[];
+    pendingRecs=recs.length;
+    document.getElementById("social-dot").style.display=pendingRecs>0?"block":"none";
+  }catch{}
+}
+
+// ─── AUTH UI ─────────────────────────────────────────────────────────────────
+let authTabState="login";
 function setAuthTab(t){
-  authTab=t;
+  authTabState=t;
   document.querySelectorAll(".auth-tab").forEach(b=>b.classList.toggle("active",b.textContent.toLowerCase().includes(t==="login"?"accedi":"registrati")));
   document.getElementById("auth-submit-btn").textContent=t==="login"?"Accedi":"Crea account";
+  document.getElementById("auth-username-field").style.display=t==="register"?"block":"none";
   document.getElementById("auth-err").style.display="none";
 }
 function showAuthErr(msg){const e=document.getElementById("auth-err");e.textContent=msg;e.style.display="block"}
@@ -250,52 +319,90 @@ function showAuthErr(msg){const e=document.getElementById("auth-err");e.textCont
 async function submitAuth(){
   const email=document.getElementById("auth-email").value.trim();
   const pass=document.getElementById("auth-pass").value;
+  const username=document.getElementById("auth-username").value.trim();
   if(!email||!pass){showAuthErr("Compila tutti i campi");return}
-  const btn=document.getElementById("auth-submit-btn");
-  btn.textContent="...";btn.disabled=true;
+  if(authTabState==="register"&&!username){showAuthErr("Scegli un username");return}
+  const btn=document.getElementById("auth-submit-btn");btn.textContent="...";btn.disabled=true;
   try{
     let data;
-    if(authTab==="login")data=await signIn(email,pass);
-    else data=await signUp(email,pass);
+    if(authTabState==="login"){
+      data=await authSignIn(email,pass);
+    }else{
+      // check username availability
+      const existing=await dbQ("profiles",`username=eq.${encodeURIComponent(username)}&select=id`).catch(()=>[]);
+      if(existing&&existing.length>0){showAuthErr("Username già in uso");btn.textContent="Crea account";btn.disabled=false;return}
+      data=await authSignUp(email,pass);
+    }
     if(data?.access_token){
-      session={...data,user:data.user};localStorage.setItem("mt_session",JSON.stringify(session));
-      showApp();await loadLibrary();
-    }else if(authTab==="register"){showAuthErr("Controlla la tua email per confermare l'account.")}
+      session={...data,user:data.user};localStorage.setItem("mt_s",JSON.stringify(session));
+      if(authTabState==="register"){
+        const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
+        await dbIns("profiles",{id:session.user.id,username,avatar_color:color});
+        const profiles=await dbQ("profiles",`id=eq.${session.user.id}&select=*`);
+        myProfile=profiles[0];
+        await startApp();
+      }else{
+        const profiles=await dbQ("profiles",`id=eq.${session.user.id}&select=*`).catch(()=>[]);
+        if(!profiles||profiles.length===0){document.getElementById("username-screen").style.display="flex";btn.textContent="Accedi";btn.disabled=false;return}
+        myProfile=profiles[0];await startApp();
+      }
+    }else if(authTabState==="register"){showAuthErr("Controlla la tua email per confermare.")}
   }catch(e){showAuthErr(e.message)}
-  btn.textContent=authTab==="login"?"Accedi":"Crea account";btn.disabled=false;
+  btn.textContent=authTabState==="login"?"Accedi":"Crea account";btn.disabled=false;
 }
-function loginGoogle(){signInGoogle()}
 
-// ─── TOAST ────────────────────────────────────────────────────────────────────
+async function setupUsername(){
+  const username=document.getElementById("setup-username").value.trim();
+  if(!username){document.getElementById("username-err").textContent="Inserisci un username";document.getElementById("username-err").style.display="block";return}
+  const existing=await dbQ("profiles",`username=eq.${encodeURIComponent(username)}&select=id`).catch(()=>[]);
+  if(existing&&existing.length>0){document.getElementById("username-err").textContent="Username già in uso";document.getElementById("username-err").style.display="block";return}
+  const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
+  await dbIns("profiles",{id:session.user.id,username,avatar_color:color});
+  const profiles=await dbQ("profiles",`id=eq.${session.user.id}&select=*`);
+  myProfile=profiles[0];await startApp();
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────
 let toastT=null;
-function toast(msg){
-  const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");
-  clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show"),2200);
-}
+function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show"),2400)}
 
-// ─── NAV ──────────────────────────────────────────────────────────────────────
+// ─── NAV ─────────────────────────────────────────────────────────────────────
 function switchTab(t){
-  tab=t;detail=null;
-  document.getElementById("header").style.display="";
+  tab=t;detail=null;viewingUser=null;backStack=[];
+  document.getElementById("header").style.display="flex";
   document.getElementById("back-header").style.display="none";
   document.getElementById("navbar").style.display="";
   document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.tab===t));
+  if(t==="social"){checkPendingRecs()}
   render();
 }
-function openDetail(id){
-  detail=library.find(m=>m.id===id);if(!detail)return;
+
+function pushView(title,renderFn){
+  backStack.push({title,renderFn});
   document.getElementById("header").style.display="none";
   document.getElementById("back-header").style.display="flex";
-  document.getElementById("back-title").textContent=detail.title;
-  document.getElementById("navbar").style.display="none";
-  renderDetail();
+  document.getElementById("back-title").textContent=title;
+  document.getElementById("content").innerHTML=`<div class="fade-in">${renderFn()}</div>`;
 }
-function closeDetail(){
-  detail=null;
-  document.getElementById("header").style.display="";
-  document.getElementById("back-header").style.display="none";
-  document.getElementById("navbar").style.display="";
-  render();
+
+function goBack(){
+  backStack.pop();
+  if(backStack.length===0){
+    detail=null;viewingUser=null;
+    document.getElementById("header").style.display="flex";
+    document.getElementById("back-header").style.display="none";
+    document.getElementById("navbar").style.display="";
+    render();
+  }else{
+    const prev=backStack[backStack.length-1];
+    document.getElementById("back-title").textContent=prev.title;
+    document.getElementById("content").innerHTML=`<div class="fade-in">${prev.renderFn()}</div>`;
+  }
+}
+
+function openDetail(id){
+  detail=library.find(m=>m.id===id);if(!detail)return;
+  pushView(detail.title,renderDetailHTML);
 }
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
@@ -308,56 +415,43 @@ function coverImg(m,size){
 function bdg(s,sm=false){const c=SC[s]||"#888";return `<span class="badge${sm?" badge-sm":""}" style="background:${c}22;color:${c};border-color:${c}55;">${s}</span>`}
 function starEl(sc){const c=sc>=8?"#f1c40f":sc>=6?"#e67e22":"#888";return `<span style="font-size:12px;font-weight:700;color:${c};">★ ${sc}/10</span>`}
 function pct(m){return m.total_chapters?Math.min(100,Math.round((m.chapters/m.total_chapters)*100)):0}
+function timeAgo(ts){
+  const s=Math.floor((Date.now()-new Date(ts))/1000);
+  if(s<60)return"ora";if(s<3600)return Math.floor(s/60)+"m fa";
+  if(s<86400)return Math.floor(s/3600)+"h fa";return Math.floor(s/86400)+"g fa";
+}
+function avatarEl(profile,size=36){
+  const initials=(profile?.username||"?")[0].toUpperCase();
+  const color=profile?.avatar_color||"#c0392b";
+  return `<div class="avatar" style="width:${size}px;height:${size}px;font-size:${Math.round(size*.38)}px;background:${color};">${initials}</div>`;
+}
 
-// ─── RENDER ───────────────────────────────────────────────────────────────────
+// ─── RENDER ──────────────────────────────────────────────────────────────────
 function render(){
-  if(detail){renderDetail();return}
-  const c=document.getElementById("content");
-  const map={home:renderHome,library:renderLibrary,search:renderSearch,stats:renderStats,settings:renderSettings};
-  c.innerHTML=`<div class="fade-in">${(map[tab]||renderHome)()}</div>`;
+  if(detail){document.getElementById("content").innerHTML=`<div class="fade-in">${renderDetailHTML()}</div>`;return}
+  const map={home:renderHome,library:renderLibrary,search:renderSearch,social:renderSocial,settings:renderSettings};
+  document.getElementById("content").innerHTML=`<div class="fade-in">${(map[tab]||renderHome)()}</div>`;
   if(tab==="search"&&searchQ)renderSearchResults();
 }
 
-// ─── HOME ─────────────────────────────────────────────────────────────────────
+// ─── HOME ────────────────────────────────────────────────────────────────────
 function renderHome(){
-  const tot=library.length;
-  const chaps=library.reduce((a,m)=>a+(parseInt(m.chapters)||0),0);
-  const sc=library.filter(m=>m.score>0);
-  const avg=sc.length?(sc.reduce((a,m)=>a+m.score,0)/sc.length).toFixed(1):"—";
+  const tot=library.length,chaps=library.reduce((a,m)=>a+(parseInt(m.chapters)||0),0);
+  const sc=library.filter(m=>m.score>0),avg=sc.length?(sc.reduce((a,m)=>a+m.score,0)/sc.length).toFixed(1):"—";
   const favs=library.filter(m=>m.favourite);
   const recent=[...library].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).slice(0,5);
-
-  let h=`<div class="stat-grid">
+  let h=`<div style="font-size:15px;font-weight:700;color:var(--muted);margin-bottom:12px;">Ciao, <span style="color:var(--text);">@${esc(myProfile?.username||"")}</span> 👋</div>
+  <div class="stat-grid">
     ${[["Manga totali",tot],["Capitoli",chaps.toLocaleString()],["Voto medio",avg],["Preferiti",favs.length]].map(([l,v])=>`<div class="stat-card"><div class="stat-label">${l}</div><div class="stat-val">${v}</div></div>`).join("")}
   </div>`;
-
-  if(!library.length){
-    h+=`<div class="empty"><span class="empty-icon">◫</span>Nessun manga in libreria.<br>Cerca qualcosa nella tab Cerca!</div>`;
-    return h;
-  }
-
+  if(!library.length){h+=`<div class="empty"><span class="empty-icon">◫</span>Nessun manga in libreria.<br>Cerca qualcosa nella tab Cerca!</div>`;return h}
   h+=`<div class="card"><div class="section-label">Aggiunti di recente</div>`;
-  recent.forEach(m=>{
-    h+=`<div class="card-tap" onclick="openDetail('${m.id}')" style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);">
-      ${coverImg(m,38)}
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(m.title)}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:1px;">${esc(m.genre||"")}</div>
-      </div>
-      ${bdg(m.status,true)}
-    </div>`;
-  });
+  recent.forEach(m=>{h+=`<div class="card-tap" onclick="openDetail('${m.id}')" style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);">
+    ${coverImg(m,38)}<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(m.title)}</div><div style="font-size:11px;color:var(--muted);">${esc(m.genre||"")}</div></div>${bdg(m.status,true)}</div>`});
   h+=`</div>`;
-
   if(favs.length){
     h+=`<div class="card"><div class="section-label">★ Preferiti</div>`;
-    favs.forEach(m=>{
-      h+=`<div class="card-tap" onclick="openDetail('${m.id}')" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
-        ${coverImg(m,34)}
-        <span style="flex:1;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(m.title)}</span>
-        ${m.score>0?starEl(m.score):""}
-      </div>`;
-    });
+    favs.forEach(m=>{h+=`<div class="card-tap" onclick="openDetail('${m.id}')" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">${coverImg(m,34)}<span style="flex:1;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(m.title)}</span>${m.score>0?starEl(m.score):""}</div>`});
     h+=`</div>`;
   }
   return h;
@@ -365,59 +459,30 @@ function renderHome(){
 
 // ─── LIBRARY ─────────────────────────────────────────────────────────────────
 function renderLibrary(){
-  return `<input type="search" id="lib-search-input" value="${esc(libSearch)}" placeholder="🔍 Cerca nella libreria..." oninput="onLibSearch(this.value)" style="margin-bottom:10px;">
-  <div class="chips" id="lib-chips">${libChipsHTML()}</div>
-  <div class="sort-pills" id="lib-sort">${libSortHTML()}</div>
-  <div id="lib-list">${libListHTML()}</div>`;
+  return `<input type="search" id="lib-si" value="${esc(libSearch)}" placeholder="🔍 Cerca nella libreria..." oninput="onLibSearch(this.value)" style="margin-bottom:10px;">
+  <div class="chips" id="lib-chips">${libChips()}</div>
+  <div class="sort-pills" id="lib-sort">${libSortH()}</div>
+  <div id="lib-list">${libList()}</div>`;
 }
-
-function libChipsHTML(){
-  let h=`<button class="chip${libFilter==="Tutti"?" active":""}" onclick="libFilter='Tutti';updateLibList()">Tutti (${library.length})</button>`;
-  STATUS.forEach(s=>{
-    const n=library.filter(m=>m.status===s).length;
-    if(n>0)h+=`<button class="chip${libFilter===s?" active":""}" onclick="libFilter='${s}';updateLibList()" style="${libFilter===s?`background:${SC[s]};border-color:${SC[s]};color:#fff;`:""}">${s} (${n})</button>`;
-  });
+function libChips(){
+  let h=`<button class="chip${libFilter==="Tutti"?" active":""}" onclick="libFilter='Tutti';updateLib()">Tutti (${library.length})</button>`;
+  STATUS.forEach(s=>{const n=library.filter(m=>m.status===s).length;if(n>0)h+=`<button class="chip${libFilter===s?" active":""}" onclick="libFilter='${s}';updateLib()" style="${libFilter===s?`background:${SC[s]};border-color:${SC[s]};color:#fff;`:""}">${s} (${n})</button>`});
   return h;
 }
-
-function libSortHTML(){
-  return [["title","A-Z"],["score","Voto"],["chapters","Cap."],["added","Data"]].map(([v,l])=>
-    `<button class="sort-pill${libSort===v?" active":""}" onclick="libSort='${v}';updateLibList()">${l}</button>`
-  ).join("");
-}
-
-function libListHTML(){
-  let list=library
-    .filter(m=>libFilter==="Tutti"||m.status===libFilter)
-    .filter(m=>m.title.toLowerCase().includes(libSearch.toLowerCase()));
+function libSortH(){return [["title","A-Z"],["score","Voto"],["chapters","Cap."],["added","Data"]].map(([v,l])=>`<button class="sort-pill${libSort===v?" active":""}" onclick="libSort='${v}';updateLib()">${l}</button>`).join("")}
+function libList(){
+  let list=library.filter(m=>libFilter==="Tutti"||m.status===libFilter).filter(m=>m.title.toLowerCase().includes(libSearch.toLowerCase()));
   if(libSort==="title")list.sort((a,b)=>a.title.localeCompare(b.title));
   if(libSort==="score")list.sort((a,b)=>b.score-a.score);
   if(libSort==="chapters")list.sort((a,b)=>b.chapters-a.chapters);
   if(libSort==="added")list.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
   if(!list.length)return`<div class="empty"><span class="empty-icon">◫</span>Nessun manga trovato</div>`;
-  return list.map(m=>`<div class="card card-tap" onclick="openDetail('${m.id}')"><div class="manga-row">
-    ${coverImg(m,54)}
-    <div style="flex:1;min-width:0;">
-      <div style="font-weight:800;font-size:14px;margin-bottom:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(m.title)}</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:5px;">${bdg(m.status,true)}${m.score>0?starEl(m.score):""}</div>
-      <div style="font-size:11px;color:var(--muted);">${m.chapters} cap.${m.total_chapters?` / ${m.total_chapters}`:""}</div>
-      ${m.total_chapters?`<div class="prog-bg"><div class="prog-fill" style="width:${pct(m)}%;"></div></div>`:""}
-    </div>
-    ${m.favourite?`<span style="color:#f1c40f;font-size:18px;flex-shrink:0;align-self:center;">★</span>`:""}
-  </div></div>`).join("");
+  return list.map(m=>`<div class="card card-tap" onclick="openDetail('${m.id}')"><div class="manga-row">${coverImg(m,54)}<div style="flex:1;min-width:0;"><div style="font-weight:800;font-size:14px;margin-bottom:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(m.title)}</div><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:5px;">${bdg(m.status,true)}${m.score>0?starEl(m.score):""}</div><div style="font-size:11px;color:var(--muted);">${m.chapters} cap.${m.total_chapters?` / ${m.total_chapters}`:""}</div>${m.total_chapters?`<div class="prog-bg"><div class="prog-fill" style="width:${pct(m)}%;"></div></div>`:""}</div>${m.favourite?`<span style="color:#f1c40f;font-size:18px;flex-shrink:0;align-self:center;">★</span>`:""}</div></div>`).join("");
 }
-
-function onLibSearch(v){
-  libSearch=v;updateLibList();
-}
-
-function updateLibList(){
-  const chips=document.getElementById("lib-chips");
-  const sort=document.getElementById("lib-sort");
-  const list=document.getElementById("lib-list");
-  if(chips)chips.innerHTML=libChipsHTML();
-  if(sort)sort.innerHTML=libSortHTML();
-  if(list)list.innerHTML=libListHTML();
+function onLibSearch(v){libSearch=v;updateLib()}
+function updateLib(){
+  const c=document.getElementById("lib-chips"),s=document.getElementById("lib-sort"),l=document.getElementById("lib-list");
+  if(c)c.innerHTML=libChips();if(s)s.innerHTML=libSortH();if(l)l.innerHTML=libList();
 }
 
 // ─── SEARCH ──────────────────────────────────────────────────────────────────
@@ -426,7 +491,6 @@ function renderSearch(){
   <input type="search" id="online-search" value="${esc(searchQ)}" placeholder="Cerca su MyAnimeList..." oninput="onSQ(this.value)" style="margin-bottom:12px;">
   <div id="search-results"></div>`;
 }
-
 function onSQ(v){
   searchQ=v;clearTimeout(searchTimer);
   if(!v.trim()){searchResults=[];renderSearchResults();return}
@@ -437,127 +501,389 @@ function onSQ(v){
       .catch(()=>{searchResults=[];searching=false;renderSearchResults()});
   },500);
 }
-
 function renderSearchResults(){
   const el=document.getElementById("search-results");if(!el)return;
   let h="";
-  if(searching){h=`<div class="empty">🔍 Ricerca in corso...</div>`}
-  else if(!searchQ.trim()){h=`<div class="empty"><span class="empty-icon">◎</span>Cerca qualsiasi manga<br>su MyAnimeList</div>`}
-  else if(!searchResults.length){h=`<div class="empty">Nessun risultato per "${esc(searchQ)}"</div>`}
-  else{
-    searchResults.forEach((m,i)=>{
-      const title=m.title_english||m.title;
-      const img=m.images?.jpg?.image_url||"";
-      const genres=(m.genres||[]).slice(0,2).map(g=>g.name).join(", ");
-      const inLib=library.some(x=>x.title===title);
-      h+=`<div class="card card-tap" onclick="openPreview(${i})"><div class="manga-row">
-        ${img?`<img src="${esc(img)}" class="cover" style="width:54px;height:76px;" loading="lazy" onerror="this.style.display='none'">`:`<div class="cover-ph" style="width:54px;height:76px;"><span style="font-size:15px;">${title.slice(0,2).toUpperCase()}</span></div>`}
-        <div style="flex:1;min-width:0;">
-          <div style="font-weight:800;font-size:13px;margin-bottom:3px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${esc(title)}</div>
-          <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">${genres}${m.chapters?` · ${m.chapters} cap.`:""}</div>
-          ${m.score?`<div style="font-size:11px;color:#f1c40f;">★ ${m.score}</div>`:""}
-        </div>
-        ${inLib?`<span style="font-size:11px;color:var(--muted);flex-shrink:0;align-self:center;">✓</span>`:`<span style="font-size:18px;color:var(--red);flex-shrink:0;align-self:center;">+</span>`}
-      </div></div>`;
-    });
-  }
+  if(searching)h=`<div class="empty">🔍 Ricerca in corso...</div>`;
+  else if(!searchQ.trim())h=`<div class="empty"><span class="empty-icon">◎</span>Cerca qualsiasi manga su MyAnimeList</div>`;
+  else if(!searchResults.length)h=`<div class="empty">Nessun risultato per "${esc(searchQ)}"</div>`;
+  else searchResults.forEach((m,i)=>{
+    const title=m.title_english||m.title,img=m.images?.jpg?.image_url||"";
+    const genres=(m.genres||[]).slice(0,2).map(g=>g.name).join(", ");
+    const inLib=library.some(x=>x.title===title);
+    h+=`<div class="card card-tap" onclick="openPreview(${i})"><div class="manga-row">
+      ${img?`<img src="${esc(img)}" class="cover" style="width:54px;height:76px;" loading="lazy" onerror="this.style.display='none'">`:`<div class="cover-ph" style="width:54px;height:76px;"><span style="font-size:15px;">${title.slice(0,2).toUpperCase()}</span></div>`}
+      <div style="flex:1;min-width:0;"><div style="font-weight:800;font-size:13px;margin-bottom:3px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${esc(title)}</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">${genres}${m.chapters?` · ${m.chapters} cap.`:""}</div>
+      ${m.score?`<div style="font-size:11px;color:#f1c40f;">★ ${m.score}</div>`:""}</div>
+      ${inLib?`<span style="font-size:11px;color:var(--muted);flex-shrink:0;align-self:center;">✓</span>`:`<span style="font-size:20px;color:var(--red);flex-shrink:0;align-self:center;">+</span>`}
+    </div></div>`;
+  });
   el.innerHTML=h;
 }
 
-// ─── PREVIEW MODAL ────────────────────────────────────────────────────────────
+// ─── PREVIEW MODAL ───────────────────────────────────────────────────────────
 function openPreview(idx){
   previewManga=searchResults[idx];if(!previewManga)return;
-  const m=previewManga;
-  const title=m.title_english||m.title;
-  const img=m.images?.jpg?.image_url||"";
+  const m=previewManga,title=m.title_english||m.title,img=m.images?.jpg?.image_url||"";
   const inLib=library.some(x=>x.title===title);
   const genres=(m.genres||[]).map(g=>g.name).join(", ");
-  const themes=(m.themes||[]).map(t=>t.name).join(", ");
   const synopsis=m.synopsis?m.synopsis.replace(/\[Written by MAL Rewrite\]/g,"").trim():"";
-
   document.getElementById("preview-body").innerHTML=`
     <div style="display:flex;gap:14px;margin-bottom:16px;">
-      ${img?`<img src="${esc(img)}" class="cover" style="width:90px;height:126px;" onerror="this.style.display='none'">`:`<div class="cover-ph" style="width:90px;height:126px;"><span style="font-size:22px;">${title.slice(0,2).toUpperCase()}</span></div>`}
-      <div style="flex:1;">
-        <div style="font-weight:900;font-size:16px;margin-bottom:6px;line-height:1.3;">${esc(title)}</div>
-        ${m.title!==title?`<div style="font-size:12px;color:var(--muted);margin-bottom:4px;">${esc(m.title)}</div>`:""}
-        ${m.score?`<div style="font-size:14px;color:#f1c40f;font-weight:700;margin-bottom:4px;">★ ${m.score} <span style="color:var(--muted);font-size:11px;">(${(m.scored_by||0).toLocaleString()} voti)</span></div>`:""}
-        ${m.rank?`<div style="font-size:12px;color:var(--muted);">Rank #${m.rank}</div>`:""}
-        ${m.status?`<div style="font-size:12px;color:var(--muted);margin-top:2px;">${esc(m.status)}</div>`:""}
-      </div>
+      ${img?`<img src="${esc(img)}" class="cover" style="width:90px;height:126px;">`:`<div class="cover-ph" style="width:90px;height:126px;"><span style="font-size:22px;">${title.slice(0,2).toUpperCase()}</span></div>`}
+      <div style="flex:1;"><div style="font-weight:900;font-size:16px;margin-bottom:6px;line-height:1.3;">${esc(title)}</div>
+      ${m.title!==title?`<div style="font-size:12px;color:var(--muted);margin-bottom:4px;">${esc(m.title)}</div>`:""}
+      ${m.score?`<div style="font-size:14px;color:#f1c40f;font-weight:700;margin-bottom:4px;">★ ${m.score}</div>`:""}
+      ${m.rank?`<div style="font-size:12px;color:var(--muted);">Rank #${m.rank}</div>`:""}</div>
     </div>
-
-    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">
-      ${genres?genres.split(", ").map(g=>`<span style="background:var(--redd);color:var(--red);border:1px solid var(--red)44;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;">${esc(g)}</span>`).join(""):""}
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">
-      ${[["Capitoli",m.chapters||"?"],["Volumi",m.volumes||"?"],["Tipo",m.type||"?"]].map(([l,v])=>`<div style="background:var(--card);border-radius:10px;border:1px solid var(--border);padding:10px;text-align:center;"><div style="font-size:10px;color:var(--muted);margin-bottom:3px;">${l}</div><div style="font-size:15px;font-weight:800;color:var(--text);">${v}</div></div>`).join("")}
-    </div>
-
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">${genres?genres.split(", ").map(g=>`<span style="background:var(--redd);color:var(--red);border:1px solid #e74c3c44;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;">${esc(g)}</span>`).join(""):""}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">${[["Capitoli",m.chapters||"?"],["Volumi",m.volumes||"?"],["Tipo",m.type||"?"]].map(([l,v])=>`<div style="background:var(--card);border-radius:10px;border:1px solid var(--border);padding:10px;text-align:center;"><div style="font-size:10px;color:var(--muted);margin-bottom:3px;">${l}</div><div style="font-size:15px;font-weight:800;">${v}</div></div>`).join("")}</div>
     ${synopsis?`<div style="margin-bottom:16px;"><div class="section-label">Sinossi</div><div style="font-size:13px;color:#ccc;line-height:1.6;">${esc(synopsis.slice(0,400))}${synopsis.length>400?"…":""}</div></div>`:""}
-
-    ${inLib
-      ?`<button class="btn btn-block" style="margin-bottom:8px;color:var(--muted);">✓ Già in libreria</button>`
-      :`<button class="btn btn-primary btn-block" style="margin-bottom:8px;" onclick="addFromPreview()">+ Aggiungi alla libreria</button>`}
-    <button class="btn btn-block" onclick="closePreview()" style="margin-bottom:8px;">Chiudi</button>
-  `;
+    ${inLib?`<button class="btn btn-block" style="margin-bottom:8px;color:var(--muted);">✓ Già in libreria</button>`:`<button class="btn btn-primary btn-block" style="margin-bottom:8px;" onclick="addFromPreview()">+ Aggiungi alla libreria</button>`}
+    <button class="btn btn-block" onclick="closePreview()" style="margin-bottom:8px;">Chiudi</button>`;
   document.getElementById("preview-modal").classList.add("open");
 }
-
-function closePreview(e){
-  if(e&&e.target!==document.getElementById("preview-modal"))return;
-  document.getElementById("preview-modal").classList.remove("open");
-  previewManga=null;
-}
-
+function closePreview(e){if(e&&e.target!==document.getElementById("preview-modal"))return;document.getElementById("preview-modal").classList.remove("open");previewManga=null}
 async function addFromPreview(){
   const m=previewManga;if(!m)return;
   const title=m.title_english||m.title;
   if(library.some(x=>x.title===title)){toast("Già in libreria!");closePreview();return}
   const manga={title,status:"Da leggere",chapters:0,total_chapters:m.chapters||null,score:0,genre:m.genres?.[0]?.name||"Action",cover:m.images?.jpg?.image_url||null,favourite:false,review:""};
   try{
-    const res=await dbInsert(manga);
+    const res=await dbIns("library",{...manga,user_id:session.user.id});
     library.unshift(res[0]||{...manga,id:Date.now()});
-    toast(`"${title}" aggiunto!`);
-    closePreview();
-    renderSearchResults();
+    // log activity
+    await dbIns("activity",{user_id:session.user.id,type:"added",manga_title:title,manga_cover:manga.cover,details:""}).catch(()=>{});
+    toast(`"${title}" aggiunto!`);closePreview();renderSearchResults();
   }catch(e){toast("Errore: "+e.message)}
 }
 
-// ─── STATS ────────────────────────────────────────────────────────────────────
+// ─── SOCIAL ──────────────────────────────────────────────────────────────────
+function renderSocial(){
+  return `<div style="font-weight:800;font-size:18px;margin-bottom:14px;color:var(--red);">Social</div>
+  <div class="page-tabs">
+    <button class="page-tab${socialTab==="feed"?" active":""}" onclick="socialTab='feed';updateSocial()">📰 Feed</button>
+    <button class="page-tab${socialTab==="following"?" active":""}" onclick="socialTab='following';updateSocial()">👤 Seguiti</button>
+    <button class="page-tab${socialTab==="find"?" active":""}" onclick="socialTab='find';updateSocial()">🔍 Cerca</button>
+    <button class="page-tab${socialTab==="recs"?" active":""}" onclick="socialTab='recs';updateSocial()" style="position:relative;">📨 Consigli${pendingRecs>0?`<span style="position:absolute;top:-2px;right:-2px;width:8px;height:8px;background:var(--red);border-radius:50%;"></span>`:""}
+    </button>
+  </div>
+  <div id="social-content"><div class="empty"><div class="spinner" style="margin:0 auto;"></div></div></div>`;
+}
+
+async function updateSocial(){
+  // update tab buttons
+  document.querySelectorAll(".page-tab").forEach((b,i)=>{
+    const tabs=["feed","following","find","recs"];
+    b.classList.toggle("active",tabs[i]===socialTab);
+  });
+  const el=document.getElementById("social-content");
+  if(!el)return;
+  el.innerHTML=`<div class="empty"><div class="spinner" style="margin:0 auto;"></div></div>`;
+  if(socialTab==="feed")await renderFeed(el);
+  else if(socialTab==="following")await renderFollowing(el);
+  else if(socialTab==="find")renderFindUsers(el);
+  else if(socialTab==="recs")await renderRecs(el);
+}
+
+async function renderFeed(el){
+  try{
+    // get following ids
+    const follows=await dbQ("follows",`follower_id=eq.${session.user.id}&select=following_id`)||[];
+    if(!follows.length){el.innerHTML=`<div class="empty"><span class="empty-icon">👥</span>Non segui ancora nessuno.<br>Cerca amici nella tab Cerca!</div>`;return}
+    const ids=follows.map(f=>f.following_id);
+    const activity=await dbQ("activity",`user_id=in.(${ids.join(",")})&select=*,profiles!activity_user_id_fkey(username,avatar_color)&order=created_at.desc&limit=30`)||[];
+    if(!activity.length){el.innerHTML=`<div class="empty"><span class="empty-icon">📰</span>Nessuna attività recente</div>`;return}
+    const typeLabel={added:"ha aggiunto",completed:"ha completato",status_changed:"ha aggiornato",scored:"ha votato"};
+    let h="";
+    activity.forEach(a=>{
+      const profile=a.profiles||{username:"?",avatar_color:"#888"};
+      h+=`<div class="act-item">
+        <div onclick="openUserProfile('${a.user_id}')" style="cursor:pointer;">${avatarEl(profile,36)}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;"><strong style="cursor:pointer;" onclick="openUserProfile('${a.user_id}')">@${esc(profile.username)}</strong> <span style="color:var(--muted);">${typeLabel[a.type]||a.type}</span></div>
+          <div style="font-size:13px;font-weight:700;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(a.manga_title)}</div>
+          ${a.details?`<div style="font-size:11px;color:var(--muted);margin-top:1px;">${esc(a.details)}</div>`:""}
+          <div style="font-size:11px;color:var(--dim);margin-top:3px;">${timeAgo(a.created_at)}</div>
+        </div>
+        ${a.manga_cover?`<img src="${esc(a.manga_cover)}" style="width:36px;height:50px;border-radius:6px;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none'">`:""}
+      </div>`;
+    });
+    el.innerHTML=h;
+  }catch(e){el.innerHTML=`<div class="empty">Errore: ${e.message}</div>`}
+}
+
+async function renderFollowing(el){
+  try{
+    const follows=await dbQ("follows",`follower_id=eq.${session.user.id}&select=following_id,profiles!follows_following_id_fkey(id,username,avatar_color)`)||[];
+    if(!follows.length){el.innerHTML=`<div class="empty"><span class="empty-icon">👤</span>Non segui ancora nessuno</div>`;return}
+    let h=`<div class="card">`;
+    follows.forEach(f=>{
+      const p=f.profiles||{id:f.following_id,username:"?",avatar_color:"#888"};
+      h+=`<div class="user-card">
+        <div onclick="openUserProfile('${p.id}')" style="cursor:pointer;">${avatarEl(p,42)}</div>
+        <div style="flex:1;cursor:pointer;" onclick="openUserProfile('${p.id}')"><div style="font-weight:700;font-size:14px;">@${esc(p.username)}</div></div>
+        <button class="btn btn-sm btn-danger" onclick="unfollowUser('${p.id}','${esc(p.username)}')">Smetti</button>
+      </div>`;
+    });
+    h+=`</div>`;
+    el.innerHTML=h;
+  }catch(e){el.innerHTML=`<div class="empty">Errore: ${e.message}</div>`}
+}
+
+function renderFindUsers(el){
+  el.innerHTML=`<input type="search" id="user-search-input" placeholder="🔍 Cerca per username..." oninput="searchUsers(this.value)" style="margin-bottom:12px;"><div id="user-search-results"><div class="empty"><span class="empty-icon">🔍</span>Cerca un utente per username</div></div>`;
+}
+
+let userSearchTimer=null;
+async function searchUsers(v){
+  const el=document.getElementById("user-search-results");if(!el)return;
+  clearTimeout(userSearchTimer);
+  if(!v.trim()){el.innerHTML=`<div class="empty"><span class="empty-icon">🔍</span>Cerca un utente per username</div>`;return}
+  el.innerHTML=`<div class="empty">Ricerca...</div>`;
+  userSearchTimer=setTimeout(async()=>{
+    try{
+      const results=await dbQ("profiles",`username=ilike.*${encodeURIComponent(v)}*&select=*&limit=10`)||[];
+      const myFollows=await dbQ("follows",`follower_id=eq.${session.user.id}&select=following_id`)||[];
+      const followingIds=myFollows.map(f=>f.following_id);
+      const filtered=results.filter(p=>p.id!==session.user.id);
+      if(!filtered.length){el.innerHTML=`<div class="empty">Nessun utente trovato</div>`;return}
+      let h=`<div class="card">`;
+      filtered.forEach(p=>{
+        const isFollowing=followingIds.includes(p.id);
+        h+=`<div class="user-card">
+          <div onclick="openUserProfile('${p.id}')" style="cursor:pointer;">${avatarEl(p,42)}</div>
+          <div style="flex:1;cursor:pointer;" onclick="openUserProfile('${p.id}')"><div style="font-weight:700;font-size:14px;">@${esc(p.username)}</div></div>
+          ${isFollowing
+            ?`<button class="btn btn-sm" style="color:var(--muted);" onclick="unfollowUser('${p.id}','${esc(p.username)}')">Seguito ✓</button>`
+            :`<button class="btn btn-sm btn-primary" onclick="followUser('${p.id}','${esc(p.username)}')">+ Segui</button>`}
+        </div>`;
+      });
+      h+=`</div>`;
+      el.innerHTML=h;
+    }catch(e){el.innerHTML=`<div class="empty">Errore: ${e.message}</div>`}
+  },400);
+}
+
+async function followUser(id,username){
+  try{
+    await dbIns("follows",{follower_id:session.user.id,following_id:id});
+    toast(`Ora segui @${username}`);
+    const v=document.getElementById("user-search-input")?.value||"";
+    if(v)searchUsers(v); else updateSocial();
+  }catch(e){toast("Errore: "+e.message)}
+}
+async function unfollowUser(id,username){
+  try{
+    await dbDel("follows",`follower_id=eq.${session.user.id}&following_id=eq.${id}`);
+    toast(`Hai smesso di seguire @${username}`);updateSocial();
+  }catch(e){toast("Errore: "+e.message)}
+}
+
+async function renderRecs(el){
+  try{
+    pendingRecs=0;document.getElementById("social-dot").style.display="none";
+    const recs=await dbQ("recommendations",`to_id=eq.${session.user.id}&select=*,profiles!recommendations_from_id_fkey(username,avatar_color)&order=created_at.desc`)||[];
+    if(!recs.length){el.innerHTML=`<div class="empty"><span class="empty-icon">📨</span>Nessun consiglio ricevuto</div>`;return}
+    let h="";
+    recs.forEach(r=>{
+      const p=r.profiles||{username:"?",avatar_color:"#888"};
+      const inLib=library.some(m=>m.manga_title===r.manga_title||m.title===r.manga_title);
+      h+=`<div class="card">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          ${avatarEl(p,34)}
+          <div style="flex:1;"><div style="font-size:12px;color:var(--muted);">Consigliato da</div><div style="font-weight:700;font-size:14px;">@${esc(p.username)}</div></div>
+          <div style="font-size:11px;color:var(--dim);">${timeAgo(r.created_at)}</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px;">
+          ${r.manga_cover?`<img src="${esc(r.manga_cover)}" style="width:44px;height:62px;border-radius:6px;object-fit:cover;" onerror="this.style.display='none'">`:""}
+          <div style="flex:1;"><div style="font-weight:800;font-size:14px;">${esc(r.manga_title)}</div>
+          ${r.message?`<div style="font-size:13px;color:var(--muted);margin-top:4px;font-style:italic;">"${esc(r.message)}"</div>`:""}</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          ${inLib?`<span style="font-size:12px;color:var(--muted);padding:8px 0;">✓ Già in libreria</span>`:`<button class="btn btn-primary btn-sm" onclick="addRecToLib('${esc(r.manga_title)}','${esc(r.manga_cover||"")}','${r.id}')">+ Aggiungi</button>`}
+          <button class="btn btn-sm btn-danger" onclick="dismissRec('${r.id}')">Ignora</button>
+        </div>
+      </div>`;
+    });
+    el.innerHTML=h;
+  }catch(e){el.innerHTML=`<div class="empty">Errore: ${e.message}</div>`}
+}
+
+async function addRecToLib(title,cover,recId){
+  const manga={title,status:"Da leggere",chapters:0,total_chapters:null,score:0,genre:"Action",cover:cover||null,favourite:false,review:""};
+  try{
+    const res=await dbIns("library",{...manga,user_id:session.user.id});
+    library.unshift(res[0]||{...manga,id:Date.now()});
+    await dbDel("recommendations",`id=eq.${recId}`).catch(()=>{});
+    toast(`"${title}" aggiunto!`);updateSocial();
+  }catch(e){toast("Errore: "+e.message)}
+}
+async function dismissRec(id){
+  await dbDel("recommendations",`id=eq.${id}`).catch(()=>{});
+  updateSocial();
+}
+
+// ─── USER PROFILE VIEW ───────────────────────────────────────────────────────
+async function openUserProfile(userId){
+  try{
+    const profiles=await dbQ("profiles",`id=eq.${userId}&select=*`)||[];
+    const profile=profiles[0];if(!profile)return;
+    const theirLib=await dbQ("library",`user_id=eq.${userId}&select=*`)||[];
+    const follows=await dbQ("follows",`follower_id=eq.${session.user.id}&following_id=eq.${userId}&select=id`)||[];
+    const isFollowing=follows.length>0;
+    const followerCount=(await dbQ("follows",`following_id=eq.${userId}&select=id`)||[]).length;
+
+    viewingUser={profile,library:theirLib,isFollowing};
+
+    pushView(`@${profile.username}`,()=>renderUserProfileHTML(userId,profile,theirLib,followerCount));
+  }catch(e){toast("Errore: "+e.message)}
+}
+
+function renderUserProfileHTML(userId,profile,theirLib,followerCount){
+  const tot=theirLib.length,chaps=theirLib.reduce((a,m)=>a+(parseInt(m.chapters)||0),0);
+  const sc=theirLib.filter(m=>m.score>0),avg=sc.length?(sc.reduce((a,m)=>a+m.score,0)/sc.length).toFixed(1):"—";
+  const isFollowing=viewingUser?.isFollowing||false;
+  const isSelf=userId===session.user.id;
+
+  let h=`
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+    ${avatarEl(profile,64)}
+    <div style="flex:1;">
+      <div style="font-weight:900;font-size:20px;">@${esc(profile.username)}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px;">${followerCount} follower</div>
+    </div>
+  </div>
+  ${!isSelf?`<div style="display:flex;gap:8px;margin-bottom:16px;">
+    ${isFollowing
+      ?`<button class="btn btn-block" onclick="unfollowUserProfile('${userId}','${esc(profile.username)}')" style="color:var(--muted);">Seguito ✓</button>`
+      :`<button class="btn btn-primary btn-block" onclick="followUserProfile('${userId}','${esc(profile.username)}')">+ Segui</button>`}
+    <button class="btn" style="flex:1;" onclick="openRecModal('${userId}','${esc(profile.username)}')">📨 Consiglia</button>
+  </div>`:""}
+  <div class="stat-grid" style="margin-bottom:16px;">
+    ${[["Manga",tot],["Capitoli",chaps.toLocaleString()],["Voto medio",avg],["Completati",theirLib.filter(m=>m.status==="Completati").length]].map(([l,v])=>`<div class="stat-card"><div class="stat-label">${l}</div><div class="stat-val">${v}</div></div>`).join("")}
+  </div>`;
+
+  // confronto se non è se stesso
+  if(!isSelf&&library.length&&theirLib.length){
+    const myTitles=new Set(library.map(m=>m.title));
+    const common=theirLib.filter(m=>myTitles.has(m.title));
+    if(common.length){
+      h+=`<div class="card" style="margin-bottom:14px;"><div class="section-label">📚 In comune (${common.length})</div>`;
+      common.slice(0,5).forEach(m=>{
+        const mine=library.find(x=>x.title===m.title);
+        h+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+          ${coverImg(m,34)}
+          <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(m.title)}</div>
+          <div style="display:flex;gap:6px;align-items:center;margin-top:3px;font-size:11px;color:var(--muted);">
+            Tu: ${mine?.score>0?`★${mine.score}`:"—"} · ${esc(profile.username)}: ${m.score>0?`★${m.score}`:"—"}
+          </div></div>
+        </div>`;
+      });
+      h+=`</div>`;
+    }
+  }
+
+  h+=`<div class="card"><div class="section-label">Libreria di @${esc(profile.username)}</div>`;
+  if(!theirLib.length){h+=`<div style="color:var(--muted);font-size:13px;padding:10px 0;">Libreria vuota</div>`}
+  else{
+    theirLib.slice(0,20).forEach(m=>{
+      h+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+        ${coverImg(m,38)}
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(m.title)}</div>
+        <div style="display:flex;gap:6px;align-items:center;margin-top:3px;">${bdg(m.status,true)}${m.score>0?starEl(m.score):""}</div></div>
+        ${!isSelf?`<button class="btn btn-sm" onclick="openRecModalManga('${userId}','${esc(profile.username)}','${esc(m.title)}','${esc(m.cover||"")}')" style="font-size:18px;padding:4px 8px;">📨</button>`:""}
+      </div>`;
+    });
+  }
+  h+=`</div>`;
+  return h;
+}
+
+async function followUserProfile(userId,username){
+  await followUser(userId,username);
+  if(viewingUser)viewingUser.isFollowing=true;
+  // re-render
+  const profile=viewingUser?.profile;
+  const theirLib=viewingUser?.library||[];
+  const followerCount=(await dbQ("follows",`following_id=eq.${userId}&select=id`)||[]).length;
+  backStack[backStack.length-1].renderFn=()=>renderUserProfileHTML(userId,profile,theirLib,followerCount);
+  document.getElementById("content").innerHTML=`<div class="fade-in">${renderUserProfileHTML(userId,profile,theirLib,followerCount)}</div>`;
+}
+async function unfollowUserProfile(userId,username){
+  await unfollowUser(userId,username);
+  if(viewingUser)viewingUser.isFollowing=false;
+  const profile=viewingUser?.profile;
+  const theirLib=viewingUser?.library||[];
+  const followerCount=(await dbQ("follows",`following_id=eq.${userId}&select=id`)||[]).length;
+  backStack[backStack.length-1].renderFn=()=>renderUserProfileHTML(userId,profile,theirLib,followerCount);
+  document.getElementById("content").innerHTML=`<div class="fade-in">${renderUserProfileHTML(userId,profile,theirLib,followerCount)}</div>`;
+}
+
+// ─── RECOMMEND ───────────────────────────────────────────────────────────────
+function openRecModal(userId,username){
+  // pick from your library
+  recTarget={id:userId,username};recManga=null;
+  document.getElementById("rec-title").textContent=`Consiglia a @${username}`;
+  document.getElementById("rec-sub").textContent="Scegli un manga dalla tua libreria";
+  document.getElementById("rec-msg").value="";
+  // show library picker inside modal
+  const body=document.querySelector("#rec-modal > div");
+  // add picker
+  let picker=document.getElementById("rec-picker");
+  if(!picker){picker=document.createElement("div");picker.id="rec-picker";picker.style.cssText="max-height:180px;overflow-y:auto;margin-bottom:12px;";body.insertBefore(picker,body.children[2])}
+  picker.innerHTML=library.slice(0,30).map(m=>`<div onclick="selectRecManga('${esc(m.title)}','${esc(m.cover||"")}',this)" style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:10px;cursor:pointer;transition:background .15s;" class="rec-manga-item">
+    ${coverImg(m,32)}<span style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(m.title)}</span>
+  </div>`).join("");
+  document.getElementById("rec-modal").style.display="flex";
+}
+
+function openRecModalManga(userId,username,title,cover){
+  recTarget={id:userId,username};recManga={title,cover};
+  document.getElementById("rec-title").textContent=`Consiglia a @${username}`;
+  document.getElementById("rec-sub").textContent=title;
+  document.getElementById("rec-msg").value="";
+  let picker=document.getElementById("rec-picker");if(picker)picker.innerHTML="";
+  document.getElementById("rec-modal").style.display="flex";
+}
+
+function selectRecManga(title,cover,el){
+  recManga={title,cover};
+  document.getElementById("rec-sub").textContent=title;
+  document.querySelectorAll(".rec-manga-item").forEach(e=>e.style.background="");
+  el.style.background="var(--redd)";
+}
+
+async function sendRecommendation(){
+  if(!recTarget||!recManga){toast("Seleziona un manga!");return}
+  const msg=document.getElementById("rec-msg").value.trim();
+  try{
+    await dbIns("recommendations",{from_id:session.user.id,to_id:recTarget.id,manga_title:recManga.title,manga_cover:recManga.cover||null,message:msg});
+    toast(`Consiglio inviato a @${recTarget.username}!`);closeRecModal();
+  }catch(e){toast("Errore: "+e.message)}
+}
+function closeRecModal(){document.getElementById("rec-modal").style.display="none";recTarget=null;recManga=null}
+
+// ─── STATS ───────────────────────────────────────────────────────────────────
 function renderStats(){
-  const tot=library.length;
-  const chaps=library.reduce((a,m)=>a+(parseInt(m.chapters)||0),0);
-  const sc=library.filter(m=>m.score>0);
-  const avg=sc.length?(sc.reduce((a,m)=>a+m.score,0)/sc.length).toFixed(1):"—";
+  const tot=library.length,chaps=library.reduce((a,m)=>a+(parseInt(m.chapters)||0),0);
+  const sc=library.filter(m=>m.score>0),avg=sc.length?(sc.reduce((a,m)=>a+m.score,0)/sc.length).toFixed(1):"—";
   const byStatus=STATUS.map(s=>({label:s,val:library.filter(m=>m.status===s).length,color:SC[s]})).filter(x=>x.val>0);
   const gm={};library.forEach(m=>{if(m.genre)gm[m.genre]=(gm[m.genre]||0)+1});
   const byGenre=Object.entries(gm).map(([l,v],i)=>({label:l,val:v,color:GC[i%GC.length]})).sort((a,b)=>b.val-a.val).slice(0,6);
-
   let h=`<div style="font-weight:800;font-size:18px;margin-bottom:14px;color:var(--red);">Statistiche</div>
-  <div class="stat-grid">
-    ${[["Totale manga",tot],["Capitoli",chaps.toLocaleString()],["Voto medio",avg],["Preferiti",library.filter(m=>m.favourite).length]].map(([l,v])=>`<div class="stat-card"><div class="stat-label">${l}</div><div class="stat-val">${v}</div></div>`).join("")}
-  </div>`;
-
+  <div class="stat-grid">${[["Totale manga",tot],["Capitoli",chaps.toLocaleString()],["Voto medio",avg],["Preferiti",library.filter(m=>m.favourite).length]].map(([l,v])=>`<div class="stat-card"><div class="stat-label">${l}</div><div class="stat-val">${v}</div></div>`).join("")}</div>`;
   if(!library.length){h+=`<div class="empty"><span class="empty-icon">◈</span>Aggiungi manga per vedere le statistiche</div>`;return h}
   if(byStatus.length)h+=donutCard("Distribuzione stati",byStatus);
   if(byGenre.length)h+=donutCard("Generi più letti",byGenre);
   return h;
 }
-
 function donutCard(title,data){
   const tot=data.reduce((a,d)=>a+d.val,0);if(!tot)return"";
-  const size=120,r=40,cx=60,cy=60;
-  let off=0,paths="";
-  data.forEach(d=>{
-    const p=d.val/tot,a1=off*2*Math.PI-Math.PI/2,a2=(off+p)*2*Math.PI-Math.PI/2;
-    const x1=cx+r*Math.cos(a1),y1=cy+r*Math.sin(a1),x2=cx+r*Math.cos(a2),y2=cy+r*Math.sin(a2);
-    paths+=`<path d="M${cx} ${cy} L${x1.toFixed(2)} ${y1.toFixed(2)} A${r} ${r} 0 ${p>.5?1:0} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z" fill="${d.color}" opacity=".85"/>`;
-    off+=p;
-  });
-  const legend=data.map(d=>`<div class="legend-row"><div class="legend-dot" style="background:${d.color}"></div><span style="font-size:11px;flex:1;color:var(--text);">${esc(d.label)}</span><span style="font-size:12px;font-weight:700;color:${d.color};">${d.val}</span></div>`).join("");
-  return `<div class="card"><div class="section-label">${title}</div><div style="display:flex;align-items:center;gap:16px;"><svg width="${size}" height="${size}" style="flex-shrink:0;">${paths}<circle cx="${cx}" cy="${cy}" r="22" fill="var(--card)"/><text x="${cx}" y="${cy+5}" text-anchor="middle" fill="var(--text)" font-size="14" font-weight="700">${tot}</text></svg><div style="flex:1;">${legend}</div></div></div>`;
+  const size=120,r=40,cx=60,cy=60;let off=0,paths="";
+  data.forEach(d=>{const p=d.val/tot,a1=off*2*Math.PI-Math.PI/2,a2=(off+p)*2*Math.PI-Math.PI/2;const x1=cx+r*Math.cos(a1),y1=cy+r*Math.sin(a1),x2=cx+r*Math.cos(a2),y2=cy+r*Math.sin(a2);paths+=`<path d="M${cx} ${cy} L${x1.toFixed(2)} ${y1.toFixed(2)} A${r} ${r} 0 ${p>.5?1:0} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z" fill="${d.color}" opacity=".85"/>`;off+=p});
+  return `<div class="card"><div class="section-label">${title}</div><div style="display:flex;align-items:center;gap:16px;"><svg width="${size}" height="${size}" style="flex-shrink:0;">${paths}<circle cx="${cx}" cy="${cy}" r="22" fill="var(--card)"/><text x="${cx}" y="${cy+5}" text-anchor="middle" fill="var(--text)" font-size="14" font-weight="700">${tot}</text></svg><div style="flex:1;">${data.map(d=>`<div class="legend-row"><div class="legend-dot" style="background:${d.color}"></div><span style="font-size:11px;flex:1;">${esc(d.label)}</span><span style="font-size:12px;font-weight:700;color:${d.color};">${d.val}</span></div>`).join("")}</div></div></div>`;
 }
 
 // ─── SETTINGS ────────────────────────────────────────────────────────────────
@@ -565,53 +891,32 @@ function renderSettings(){
   const email=session?.user?.email||"";
   return `<div style="font-weight:800;font-size:18px;margin-bottom:14px;color:var(--red);">Impostazioni</div>
   <div class="card">
-    <div class="section-label">Account</div>
-    <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">Connesso come <strong style="color:var(--text);">${esc(email)}</strong></div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+      ${avatarEl(myProfile,52)}
+      <div><div style="font-weight:800;font-size:16px;">@${esc(myProfile?.username||"")}</div><div style="font-size:12px;color:var(--muted);">${esc(email)}</div></div>
+    </div>
     <button class="btn btn-danger btn-block" onclick="doLogout()">Esci dall'account</button>
-  </div>
-  <div class="card" style="display:flex;align-items:center;justify-content:space-between;">
-    <div><div style="font-weight:700;font-size:14px;">Filtro NSFW</div><div style="font-size:12px;color:var(--muted);margin-top:2px;">Nasconde contenuti espliciti</div></div>
-    <div class="toggle-track${nsfwOn?" on":""}" onclick="nsfwOn=!nsfwOn;render()"><div class="toggle-thumb"></div></div>
   </div>
   <div class="card">
     <div style="font-weight:700;font-size:14px;margin-bottom:4px;">Esporta libreria</div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Scarica un backup in JSON</div>
     <button class="btn btn-primary" onclick="exportLib()">⬇ Esporta JSON</button>
   </div>
-  <div class="card"><div style="font-size:12px;color:var(--muted);">MangaTrack v2.1 · Jikan API v4 · Supabase</div></div>`;
+  <div class="card"><div style="font-size:12px;color:var(--muted);">MangaTrack v3.0 · Social · Jikan API v4 · Supabase</div></div>`;
 }
-
-async function doLogout(){await signOut();library=[];document.getElementById("app").style.display="none";document.getElementById("auth-screen").style.display="flex"}
+async function doLogout(){await authSignOut();library=[];myProfile=null;document.getElementById("app").style.display="none";document.getElementById("auth-screen").style.display="flex"}
 function exportLib(){const a=document.createElement("a");a.href="data:application/json;charset=utf-8,"+encodeURIComponent(JSON.stringify({library,exported:new Date().toISOString()},null,2));a.download="mangatrack_backup.json";a.click()}
 
-// ─── DETAIL ───────────────────────────────────────────────────────────────────
-function renderDetail(){
-  const m=detail;
-  document.getElementById("back-title").textContent=m.title;
-  const STATUS_META={
-    "In lettura":  {icon:"📖", desc:"Stai leggendo"},
-    "Completati":  {icon:"✅", desc:"Finito"},
-    "In pausa":    {icon:"⏸️", desc:"In sospeso"},
-    "Abbandonati": {icon:"🚫", desc:"Lasciato perdere"},
-    "Da leggere":  {icon:"🔖", desc:"Lista desideri"},
-  };
-  const statusBtns=`<div class="status-grid">${STATUS.map(s=>{
-    const c=SC[s],active=m.status===s,meta=STATUS_META[s];
-    return `<button class="status-btn" onclick="setDF('status','${s}');renderDetail()" style="background:${active?c+"33":c+"0d"};color:${active?c:"var(--muted)"};border-color:${active?c:c+"33"};">
-      <span class="status-btn-icon">${meta.icon}</span>
-      <span class="status-btn-label">${s}</span>
-      <span class="status-btn-desc">${meta.desc}</span>
-    </button>`;
-  }).join("")}</div>`;
-
-  document.getElementById("content").innerHTML=`<div class="fade-in">
+// ─── DETAIL ──────────────────────────────────────────────────────────────────
+function renderDetailHTML(){
+  const m=detail;if(!m)return"";
+  const statusBtns=`<div class="status-grid">${STATUS.map(s=>{const c=SC[s],active=m.status===s,meta=STATUS_META[s];return `<button class="status-btn" onclick="setDF('status','${s}');refreshDetail()" style="background:${active?c+"33":c+"0d"};color:${active?c:"var(--muted)"};border-color:${active?c:c+"33"};"><span class="status-btn-icon">${meta.icon}</span><span class="status-btn-label">${s}</span><span class="status-btn-desc">${meta.desc}</span></button>`}).join("")}</div>`;
+  return `
   <div style="display:flex;gap:14px;margin-bottom:16px;">
     ${coverImg(m,84)}
-    <div style="flex:1;">
-      <div style="font-weight:800;font-size:16px;margin-bottom:6px;line-height:1.3;">${esc(m.title)}</div>
-      <div style="margin-bottom:6px;">${bdg(m.status)}</div>
-      <div style="font-size:12px;color:var(--muted);">${esc(m.genre||"")}</div>
-    </div>
+    <div style="flex:1;"><div style="font-weight:800;font-size:16px;margin-bottom:6px;line-height:1.3;">${esc(m.title)}</div>
+    <div style="margin-bottom:6px;">${bdg(m.status)}</div>
+    <div style="font-size:12px;color:var(--muted);">${esc(m.genre||"")}</div></div>
   </div>
   <div class="card"><div class="section-label">Stato lettura</div>${statusBtns}</div>
   <div class="card">
@@ -636,41 +941,50 @@ function renderDetail(){
     <textarea id="d-rev" rows="3" placeholder="Scrivi qualcosa..." onchange="setDF('review',this.value)">${esc(m.review||"")}</textarea>
   </div>
   <div style="margin-bottom:10px;">
-    <button class="btn${m.favourite?" btn-primary":""} btn-block" onclick="setDF('favourite',${!m.favourite});renderDetail()">
+    <button class="btn${m.favourite?" btn-primary":""} btn-block" onclick="setDF('favourite',${!m.favourite});refreshDetail()">
       ${m.favourite?"★ Preferito":"☆ Aggiungi ai preferiti"}
     </button>
   </div>
   <div style="display:flex;gap:10px;margin-bottom:20px;">
     <button class="btn btn-primary" style="flex:2;" onclick="saveDetail()" id="save-btn">Salva</button>
     <button class="btn btn-danger" style="flex:1;" onclick="deleteDetail()">Rimuovi</button>
-  </div></div>`;
+  </div>`;
 }
 
+function refreshDetail(){
+  document.getElementById("content").innerHTML=`<div class="fade-in">${renderDetailHTML()}</div>`;
+}
 function setDF(k,v){
   detail[k]=v;
   if(k==="chapters"&&detail.total_chapters){const el=document.getElementById("d-prog");if(el)el.style.width=pct(detail)+"%"}
 }
-
 async function saveDetail(){
-  const btn=document.getElementById("save-btn");
-  if(btn){btn.textContent="...";btn.disabled=true}
+  const btn=document.getElementById("save-btn");if(btn){btn.textContent="...";btn.disabled=true}
   try{
     const fields={status:detail.status,chapters:detail.chapters,score:detail.score,review:detail.review,favourite:detail.favourite};
-    await dbUpdate(detail.id,fields);
+    await dbUpd("library",`id=eq.${detail.id}`,fields);
     const idx=library.findIndex(m=>m.id===detail.id);
     if(idx>-1)library[idx]={...library[idx],...fields};
+    // log activity
+    const actType=fields.status==="Completati"?"completed":fields.score>0?"scored":"status_changed";
+    const details=fields.score>0?`Voto: ${fields.score}/10`:`Stato: ${fields.status}`;
+    await dbIns("activity",{user_id:session.user.id,type:actType,manga_title:detail.title,manga_cover:detail.cover,details}).catch(()=>{});
     toast("Salvato!");
   }catch(e){toast("Errore: "+e.message)}
   if(btn){btn.textContent="Salva";btn.disabled=false}
 }
-
 async function deleteDetail(){
   try{
-    await dbDelete(detail.id);
+    await dbDel("library",`id=eq.${detail.id}`);
     library=library.filter(m=>m.id!==detail.id);
-    closeDetail();toast("Rimosso dalla libreria.");
+    goBack();toast("Rimosso dalla libreria.");
   }catch(e){toast("Errore: "+e.message)}
 }
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+// patch switchTab to trigger social load
+const _origSwitch=switchTab;
+window.switchTab=function(t){_origSwitch(t);if(t==="social")setTimeout(updateSocial,50)};
 
 init();
 </script>
