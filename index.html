@@ -100,8 +100,12 @@
     .toggle-track.on .toggle-thumb{left:23px}
     @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
     .fade-in{animation:fadeIn .22s ease forwards}
-    .status-btn{border-radius:20px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;border:1.5px solid}
-    .status-btn:active{transform:scale(.93)}
+    .status-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .status-btn{border-radius:12px;padding:10px 12px;font-size:12px;font-weight:600;cursor:pointer;transition:all .18s;border:1.5px solid;text-align:left;display:flex;flex-direction:column;gap:3px}
+    .status-btn:active{transform:scale(.96)}
+    .status-btn-icon{font-size:18px;line-height:1}
+    .status-btn-label{font-size:12px;font-weight:700}
+    .status-btn-desc{font-size:10px;opacity:.7;font-weight:400}
 
     /* PREVIEW MODAL */
     #preview-modal{position:fixed;inset:0;background:#000a;z-index:100;display:none;align-items:flex-end;justify-content:center}
@@ -361,6 +365,28 @@ function renderHome(){
 
 // ─── LIBRARY ─────────────────────────────────────────────────────────────────
 function renderLibrary(){
+  return `<input type="search" id="lib-search-input" value="${esc(libSearch)}" placeholder="🔍 Cerca nella libreria..." oninput="onLibSearch(this.value)" style="margin-bottom:10px;">
+  <div class="chips" id="lib-chips">${libChipsHTML()}</div>
+  <div class="sort-pills" id="lib-sort">${libSortHTML()}</div>
+  <div id="lib-list">${libListHTML()}</div>`;
+}
+
+function libChipsHTML(){
+  let h=`<button class="chip${libFilter==="Tutti"?" active":""}" onclick="libFilter='Tutti';updateLibList()">Tutti (${library.length})</button>`;
+  STATUS.forEach(s=>{
+    const n=library.filter(m=>m.status===s).length;
+    if(n>0)h+=`<button class="chip${libFilter===s?" active":""}" onclick="libFilter='${s}';updateLibList()" style="${libFilter===s?`background:${SC[s]};border-color:${SC[s]};color:#fff;`:""}">${s} (${n})</button>`;
+  });
+  return h;
+}
+
+function libSortHTML(){
+  return [["title","A-Z"],["score","Voto"],["chapters","Cap."],["added","Data"]].map(([v,l])=>
+    `<button class="sort-pill${libSort===v?" active":""}" onclick="libSort='${v}';updateLibList()">${l}</button>`
+  ).join("");
+}
+
+function libListHTML(){
   let list=library
     .filter(m=>libFilter==="Tutti"||m.status===libFilter)
     .filter(m=>m.title.toLowerCase().includes(libSearch.toLowerCase()));
@@ -368,35 +394,30 @@ function renderLibrary(){
   if(libSort==="score")list.sort((a,b)=>b.score-a.score);
   if(libSort==="chapters")list.sort((a,b)=>b.chapters-a.chapters);
   if(libSort==="added")list.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  if(!list.length)return`<div class="empty"><span class="empty-icon">◫</span>Nessun manga trovato</div>`;
+  return list.map(m=>`<div class="card card-tap" onclick="openDetail('${m.id}')"><div class="manga-row">
+    ${coverImg(m,54)}
+    <div style="flex:1;min-width:0;">
+      <div style="font-weight:800;font-size:14px;margin-bottom:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(m.title)}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:5px;">${bdg(m.status,true)}${m.score>0?starEl(m.score):""}</div>
+      <div style="font-size:11px;color:var(--muted);">${m.chapters} cap.${m.total_chapters?` / ${m.total_chapters}`:""}</div>
+      ${m.total_chapters?`<div class="prog-bg"><div class="prog-fill" style="width:${pct(m)}%;"></div></div>`:""}
+    </div>
+    ${m.favourite?`<span style="color:#f1c40f;font-size:18px;flex-shrink:0;align-self:center;">★</span>`:""}
+  </div></div>`).join("");
+}
 
-  let h=`<input type="search" value="${esc(libSearch)}" placeholder="🔍 Cerca nella libreria..." oninput="libSearch=this.value;render()" style="margin-bottom:10px;">
-  <div class="chips">
-    <button class="chip${libFilter==="Tutti"?" active":""}" onclick="libFilter='Tutti';render()">Tutti (${library.length})</button>`;
-  STATUS.forEach(s=>{
-    const n=library.filter(m=>m.status===s).length;
-    if(n>0)h+=`<button class="chip${libFilter===s?" active":""}" onclick="libFilter='${s}';render()" style="${libFilter===s?`background:${SC[s]};border-color:${SC[s]};color:#fff;`:""}">${s} (${n})</button>`;
-  });
-  h+=`</div><div class="sort-pills">`;
-  [["title","A-Z"],["score","Voto"],["chapters","Cap."],["added","Data"]].forEach(([v,l])=>{
-    h+=`<button class="sort-pill${libSort===v?" active":""}" onclick="libSort='${v}';render()">${l}</button>`;
-  });
-  h+=`</div>`;
+function onLibSearch(v){
+  libSearch=v;updateLibList();
+}
 
-  if(!list.length){h+=`<div class="empty"><span class="empty-icon">◫</span>Nessun manga trovato</div>`;return h}
-
-  list.forEach(m=>{
-    h+=`<div class="card card-tap" onclick="openDetail('${m.id}')"><div class="manga-row">
-      ${coverImg(m,54)}
-      <div style="flex:1;min-width:0;">
-        <div style="font-weight:800;font-size:14px;margin-bottom:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(m.title)}</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:5px;">${bdg(m.status,true)}${m.score>0?starEl(m.score):""}</div>
-        <div style="font-size:11px;color:var(--muted);">${m.chapters} cap.${m.total_chapters?` / ${m.total_chapters}`:""}</div>
-        ${m.total_chapters?`<div class="prog-bg"><div class="prog-fill" style="width:${pct(m)}%;"></div></div>`:""}
-      </div>
-      ${m.favourite?`<span style="color:#f1c40f;font-size:18px;flex-shrink:0;align-self:center;">★</span>`:""}
-    </div></div>`;
-  });
-  return h;
+function updateLibList(){
+  const chips=document.getElementById("lib-chips");
+  const sort=document.getElementById("lib-sort");
+  const list=document.getElementById("lib-list");
+  if(chips)chips.innerHTML=libChipsHTML();
+  if(sort)sort.innerHTML=libSortHTML();
+  if(list)list.innerHTML=libListHTML();
 }
 
 // ─── SEARCH ──────────────────────────────────────────────────────────────────
@@ -567,10 +588,21 @@ function exportLib(){const a=document.createElement("a");a.href="data:applicatio
 function renderDetail(){
   const m=detail;
   document.getElementById("back-title").textContent=m.title;
-  const statusBtns=STATUS.map(s=>{
-    const c=SC[s],active=m.status===s;
-    return `<button class="status-btn" onclick="setDF('status','${s}')" style="background:${active?c+"44":c+"11"};color:${c};border-color:${active?c:c+"44"};">${s}</button>`;
-  }).join("");
+  const STATUS_META={
+    "In lettura":  {icon:"📖", desc:"Stai leggendo"},
+    "Completati":  {icon:"✅", desc:"Finito"},
+    "In pausa":    {icon:"⏸️", desc:"In sospeso"},
+    "Abbandonati": {icon:"🚫", desc:"Lasciato perdere"},
+    "Da leggere":  {icon:"🔖", desc:"Lista desideri"},
+  };
+  const statusBtns=`<div class="status-grid">${STATUS.map(s=>{
+    const c=SC[s],active=m.status===s,meta=STATUS_META[s];
+    return `<button class="status-btn" onclick="setDF('status','${s}');renderDetail()" style="background:${active?c+"33":c+"0d"};color:${active?c:"var(--muted)"};border-color:${active?c:c+"33"};">
+      <span class="status-btn-icon">${meta.icon}</span>
+      <span class="status-btn-label">${s}</span>
+      <span class="status-btn-desc">${meta.desc}</span>
+    </button>`;
+  }).join("")}</div>`;
 
   document.getElementById("content").innerHTML=`<div class="fade-in">
   <div style="display:flex;gap:14px;margin-bottom:16px;">
@@ -581,7 +613,7 @@ function renderDetail(){
       <div style="font-size:12px;color:var(--muted);">${esc(m.genre||"")}</div>
     </div>
   </div>
-  <div class="card"><div class="section-label">Stato</div><div style="display:flex;flex-wrap:wrap;gap:7px;">${statusBtns}</div></div>
+  <div class="card"><div class="section-label">Stato lettura</div>${statusBtns}</div>
   <div class="card">
     <div class="section-label">Progresso</div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:${m.total_chapters?"10px":"0"};">
