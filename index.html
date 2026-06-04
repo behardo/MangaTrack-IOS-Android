@@ -576,7 +576,6 @@ function renderSocial(){
 }
 
 async function updateSocial(){
-  // update tab buttons
   document.querySelectorAll(".page-tab").forEach((b,i)=>{
     const tabs=["feed","following","find","recs"];
     b.classList.toggle("active",tabs[i]===socialTab);
@@ -584,10 +583,14 @@ async function updateSocial(){
   const el=document.getElementById("social-content");
   if(!el)return;
   el.innerHTML=`<div class="empty"><div class="spinner" style="margin:0 auto;"></div></div>`;
-  if(socialTab==="feed")await renderFeed(el);
-  else if(socialTab==="following")await renderFollowing(el);
-  else if(socialTab==="find")renderFindUsers(el);
-  else if(socialTab==="recs")await renderRecs(el);
+  try{
+    if(socialTab==="feed")await renderFeed(el);
+    else if(socialTab==="following")await renderFollowing(el);
+    else if(socialTab==="find")renderFindUsers(el);
+    else if(socialTab==="recs")await renderRecs(el);
+  }catch(e){
+    el.innerHTML=`<div class="empty" style="font-size:12px;word-break:break-all;">Errore: ${esc(e.message)}</div>`;
+  }
 }
 
 async function renderFeed(el){
@@ -639,33 +642,29 @@ function renderFindUsers(el){
   el.innerHTML=`<input type="search" id="user-search-input" placeholder="🔍 Cerca per username..." oninput="searchUsers(this.value)" style="margin-bottom:12px;"><div id="user-search-results"><div class="empty"><span class="empty-icon">🔍</span>Cerca un utente per username</div></div>`;
 }
 
-let userSearchTimer=null;
 async function searchUsers(v){
   const el=document.getElementById("user-search-results");if(!el)return;
   clearTimeout(userSearchTimer);
-  if(!v.trim()){el.innerHTML=`<div class="empty"><span class="empty-icon">🔍</span>Cerca un utente per username</div>`;return}
+  if(!v.trim()){el.innerHTML=`<div class="empty"><span class="empty-icon">◎</span>Cerca un utente per username</div>`;return}
   el.innerHTML=`<div class="empty">Ricerca...</div>`;
   userSearchTimer=setTimeout(async()=>{
     try{
-      const results=await dbQ("profiles",`username=ilike.*${encodeURIComponent(v)}*&select=*&limit=10`)||[];
-      const myFollows=await dbQ("follows",`follower_id=eq.${session.user.id}&select=following_id`)||[];
+      const results=await safeDbQ("profiles",`username=ilike.*${encodeURIComponent(v)}*&select=id,username,avatar_color&limit=10`);
+      const myFollows=await safeDbQ("follows",`follower_id=eq.${session.user.id}&select=following_id`);
       const followingIds=myFollows.map(f=>f.following_id);
       const filtered=results.filter(p=>p.id!==session.user.id);
       if(!filtered.length){el.innerHTML=`<div class="empty">Nessun utente trovato</div>`;return}
-      let h=`<div class="card">`;
-      filtered.forEach(p=>{
+      el.innerHTML=`<div class="card">${filtered.map(p=>{
         const isFollowing=followingIds.includes(p.id);
-        h+=`<div class="user-card">
+        return `<div class="user-card">
           <div onclick="openUserProfile('${p.id}')" style="cursor:pointer;">${avatarEl(p,42)}</div>
           <div style="flex:1;cursor:pointer;" onclick="openUserProfile('${p.id}')"><div style="font-weight:700;font-size:14px;">@${esc(p.username)}</div></div>
           ${isFollowing
             ?`<button class="btn btn-sm" style="color:var(--muted);" onclick="unfollowUser('${p.id}','${esc(p.username)}')">Seguito ✓</button>`
             :`<button class="btn btn-sm btn-primary" onclick="followUser('${p.id}','${esc(p.username)}')">+ Segui</button>`}
         </div>`;
-      });
-      h+=`</div>`;
-      el.innerHTML=h;
-    }catch(e){el.innerHTML=`<div class="empty">Errore: ${e.message}</div>`}
+      }).join("")}</div>`;
+    }catch(e){el.innerHTML=`<div class="empty" style="font-size:12px;word-break:break-all;">Errore: ${esc(e.message)}</div>`}
   },400);
 }
 
