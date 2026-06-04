@@ -12,21 +12,568 @@
   <title>MangaTrack</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-text-size-adjust: 100%; }
     :root {
       --bg: #0d0d0d; --surface: #1a1a1a; --card: #1f1f1f; --border: #2a2a2a;
       --red: #c0392b; --red-light: #e74c3c; --red-dim: #7b1d13;
       --text: #f0f0f0; --muted: #888; --dim: #555;
       --safe-top: env(safe-area-inset-top); --safe-bottom: env(safe-area-inset-bottom);
     }
-    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; overflow: hidden; }
+    html, body { height: 100%; background: #0d0d0d !important; color: #f0f0f0 !important; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; overflow: hidden; -webkit-overflow-scrolling: touch; }
     #root { height: 100%; display: flex; flex-direction: column; max-width: 430px; margin: 0 auto; position: relative; }
     input, textarea, button, select { font-family: inherit; }
     button { cursor: pointer; }
+    /* scrollbar hidden */
     ::-webkit-scrollbar { display: none; }
 
+    /* HEADER */
     #header { background: var(--surface); border-bottom: 1px solid var(--border); padding: calc(var(--safe-top) + 12px) 16px 10px; flex-shrink: 0; }
     .logo { font-weight: 900; font-size: 20px; color: var(--red); letter-spacing: 1px; }
     .logo span { color: var(--text); }
     .logo-sub { font-size: 10px; color: var(--muted); letter-spacing: 3px; text-transform: uppercase; }
 
-    #back-header { background: var(--surface); border-bottom: 1px solid var(--border); 
+    /* BACK HEADER */
+    #back-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: calc(var(--safe-top) + 12px) 16px 10px; flex-shrink: 0; display: none; align-items: center; gap: 10px; }
+    #back-btn { background: none; border: none; color: var(--red); font-size: 16px; padding: 4px 0; }
+    #back-title { font-weight: 700; font-size: 16px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* CONTENT */
+    #content { flex: 1; overflow-y: auto; padding: 12px 14px calc(var(--safe-bottom) + 70px); }
+
+    /* NAVBAR */
+    #navbar { background: var(--surface); border-top: 1px solid var(--border); padding-bottom: var(--safe-bottom); display: flex; flex-shrink: 0; }
+    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 8px 0 6px; border: none; background: none; color: var(--muted); font-size: 9px; font-weight: 400; gap: 2px; transition: color .15s; }
+    .nav-item.active { color: var(--red); font-weight: 700; }
+    .nav-icon { font-size: 22px; line-height: 1; }
+
+    /* CARDS */
+    .card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); padding: 12px; margin-bottom: 10px; }
+    .section-label { font-size: 11px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+
+    /* INPUTS */
+    input[type=text], input[type=number], input[type=search], textarea {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+      color: var(--text); padding: 10px 12px; width: 100%; font-size: 14px; outline: none;
+    }
+    textarea { resize: none; line-height: 1.5; }
+    input[type=range] { width: 100%; accent-color: var(--red); }
+
+    /* BUTTONS */
+    .btn { background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 9px 16px; font-size: 13px; font-weight: 600; }
+    .btn-primary { background: var(--red); color: #fff; border-color: var(--red); }
+    .btn-danger { background: transparent; color: var(--red-light); border-color: #e74c3c44; }
+
+    /* BADGE */
+    .badge { border-radius: 20px; padding: 3px 10px; font-size: 11px; font-weight: 600; white-space: nowrap; border: 1px solid; }
+    .badge-sm { font-size: 10px; padding: 2px 8px; }
+
+    /* COVER PLACEHOLDER */
+    .cover-ph { border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: var(--red-dim); border: 1px solid var(--red); }
+    .cover-ph span { color: var(--red); font-weight: 700; }
+
+    /* PROGRESS BAR */
+    .prog-bg { background: var(--border); border-radius: 4px; height: 4px; overflow: hidden; }
+    .prog-fill { background: var(--red); height: 100%; border-radius: 4px; transition: width .3s; }
+
+    /* NOTIFICATION TOAST */
+    #toast { position: fixed; top: calc(var(--safe-top) + 16px); left: 50%; transform: translateX(-50%); background: var(--red); color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 13px; font-weight: 700; z-index: 200; white-space: nowrap; opacity: 0; transition: opacity .25s; pointer-events: none; }
+    #toast.show { opacity: 1; }
+
+    /* STATS GRID */
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+    .stat-card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); padding: 14px; }
+    .stat-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+    .stat-val { font-size: 28px; font-weight: 900; color: var(--red); }
+
+    /* FILTER CHIPS */
+    .chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 10px; }
+    .chip { background: var(--surface); color: var(--muted); border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px; font-size: 11px; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
+    .chip.active { background: var(--red); color: #fff; border-color: var(--red); }
+
+    /* SORT PILLS */
+    .sort-pills { display: flex; gap: 6px; margin-bottom: 12px; }
+    .sort-pill { background: var(--surface); color: var(--muted); border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; font-size: 11px; }
+    .sort-pill.active { background: var(--red-dim); color: var(--red); border-color: var(--red); }
+
+    /* MANGA ROW */
+    .manga-row { display: flex; gap: 12px; align-items: flex-start; }
+    .manga-row img, .manga-row .cover-ph { flex-shrink: 0; }
+
+    /* SEARCH RESULT */
+    .result-card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); padding: 12px; margin-bottom: 10px; }
+
+    /* DONUT */
+    .legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+    .legend-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+
+    /* TOGGLE */
+    .toggle-track { width: 48px; height: 28px; border-radius: 14px; background: var(--border); position: relative; transition: background .2s; }
+    .toggle-track.on { background: var(--red); }
+    .toggle-thumb { width: 22px; height: 22px; border-radius: 11px; background: #fff; position: absolute; top: 3px; left: 3px; transition: left .2s; }
+    .toggle-track.on .toggle-thumb { left: 23px; }
+
+    /* DETAIL */
+    .detail-meta { display: flex; gap: 14px; margin-bottom: 16px; }
+
+    /* STAR */
+    .star { font-size: 12px; font-weight: 700; }
+
+    /* EMPTY STATE */
+    .empty { color: var(--muted); text-align: center; padding: 40px 0; font-size: 14px; }
+    .empty-icon { font-size: 44px; margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+<div id="root">
+  <div id="header">
+    <div class="logo">MANGA<span>TRACK</span></div>
+    <div class="logo-sub">La tua libreria manga</div>
+  </div>
+  <div id="back-header">
+    <button id="back-btn" onclick="closeDetail()">← Indietro</button>
+    <span id="back-title"></span>
+  </div>
+  <div id="content"></div>
+  <nav id="navbar">
+    <button class="nav-item active" data-tab="home" onclick="switchTab('home')">
+      <span class="nav-icon">⊞</span>Home
+    </button>
+    <button class="nav-item" data-tab="library" onclick="switchTab('library')">
+      <span class="nav-icon">◫</span>Libreria
+    </button>
+    <button class="nav-item" data-tab="search" onclick="switchTab('search')">
+      <span class="nav-icon">◎</span>Cerca
+    </button>
+    <button class="nav-item" data-tab="stats" onclick="switchTab('stats')">
+      <span class="nav-icon">◈</span>Stats
+    </button>
+    <button class="nav-item" data-tab="settings" onclick="switchTab('settings')">
+      <span class="nav-icon">◧</span>Impost.
+    </button>
+  </nav>
+</div>
+<div id="toast"></div>
+
+<script>
+// ─── STATE ────────────────────────────────────────────────────────────────────
+const STATUS = ["In lettura","Completati","In pausa","Abbandonati","Da leggere"];
+const STATUS_COLORS = {"In lettura":"#e74c3c","Completati":"#27ae60","In pausa":"#f39c12","Abbandonati":"#7f8c8d","Da leggere":"#3498db"};
+const GENRE_COLORS = ["#e74c3c","#3498db","#27ae60","#f39c12","#9b59b6","#1abc9c","#e67e22","#2980b9"];
+
+let library = JSON.parse(localStorage.getItem("mt_library") || "null") || [
+  {id:1,title:"Jujutsu Kaisen",status:"In lettura",chapters:245,total:null,score:9,genre:"Action",cover:null,added:"2024-01-10",fav:true,review:"Capolavoro assoluto."},
+  {id:2,title:"Chainsaw Man",status:"Completati",chapters:97,total:97,score:10,genre:"Action",cover:null,added:"2023-11-05",fav:true,review:"Unico nel suo genere."},
+  {id:3,title:"Spy x Family",status:"In lettura",chapters:98,total:null,score:8,genre:"Comedy",cover:null,added:"2024-02-20",fav:false,review:""},
+  {id:4,title:"Vinland Saga",status:"Completati",chapters:192,total:192,score:10,genre:"Adventure",cover:null,added:"2023-08-15",fav:true,review:"Imperdibile."},
+  {id:5,title:"Blue Period",status:"In pausa",chapters:67,total:null,score:7,genre:"Slice of Life",cover:null,added:"2024-03-01",fav:false,review:""},
+];
+let nsfwOn = false;
+let currentTab = "home";
+let currentDetail = null;
+let libFilter = "Tutti";
+let libSort = "title";
+let libSearch = "";
+let searchQ = "";
+let searchResults = [];
+let searching = false;
+let searchTimer = null;
+
+function save() { localStorage.setItem("mt_library", JSON.stringify(library)); }
+
+// ─── TOAST ────────────────────────────────────────────────────────────────────
+let toastTimer = null;
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+// ─── NAVIGATION ───────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  currentTab = tab;
+  currentDetail = null;
+  document.getElementById("header").style.display = "";
+  document.getElementById("back-header").style.display = "none";
+  document.getElementById("navbar").style.display = "";
+  document.querySelectorAll(".nav-item").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+  render();
+}
+
+function openDetail(id) {
+  currentDetail = library.find(m => m.id === id);
+  if (!currentDetail) return;
+  document.getElementById("header").style.display = "none";
+  document.getElementById("back-header").style.display = "flex";
+  document.getElementById("back-title").textContent = currentDetail.title;
+  document.getElementById("navbar").style.display = "none";
+  renderDetail();
+}
+
+function closeDetail() {
+  currentDetail = null;
+  document.getElementById("header").style.display = "";
+  document.getElementById("back-header").style.display = "none";
+  document.getElementById("navbar").style.display = "";
+  render();
+}
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+function coverImg(m, size) {
+  if (m.cover) return `<img src="${m.cover}" alt="${esc(m.title)}" style="width:${size}px;height:${Math.round(size*1.4)}px;border-radius:8px;object-fit:cover;flex-shrink:0;" onerror="this.outerHTML=coverPH('${esc(m.title)}',${size})">`;
+  return coverPH(m.title, size);
+}
+function coverPH(title, size) {
+  const i = title.trim().split(" ").slice(0,2).map(w=>w[0]||"").join("").toUpperCase();
+  return `<div class="cover-ph" style="width:${size}px;height:${Math.round(size*1.4)}px;"><span style="font-size:${Math.round(size*.28)}px;">${i}</span></div>`;
+}
+function badge(status, sm) {
+  const c = STATUS_COLORS[status]||"#888";
+  return `<span class="badge${sm?' badge-sm':''}" style="background:${c}22;color:${c};border-color:${c}55;">${status}</span>`;
+}
+function star(score) {
+  const c = score>=8?"#f1c40f":score>=6?"#e67e22":"#888";
+  return `<span class="star" style="color:${c};">★ ${score}/10</span>`;
+}
+function esc(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function pct(m) { return m.total ? Math.min(100, Math.round((m.chapters/m.total)*100)) : 0; }
+
+// ─── RENDER ROUTER ────────────────────────────────────────────────────────────
+function render() {
+  if (currentDetail) { renderDetail(); return; }
+  const c = document.getElementById("content");
+  if (currentTab === "home")     c.innerHTML = renderHome();
+  if (currentTab === "library")  c.innerHTML = renderLibrary();
+  if (currentTab === "search")   c.innerHTML = renderSearch();
+  if (currentTab === "stats")    c.innerHTML = renderStats();
+  if (currentTab === "settings") c.innerHTML = renderSettings();
+  attachListeners();
+}
+
+// ─── HOME ─────────────────────────────────────────────────────────────────────
+function renderHome() {
+  const total = library.length;
+  const chapters = library.reduce((a,m)=>a+m.chapters,0);
+  const scored = library.filter(m=>m.score>0);
+  const avg = scored.length ? (scored.reduce((a,m)=>a+m.score,0)/scored.length).toFixed(1) : "—";
+  const favs = library.filter(m=>m.fav);
+
+  const recenti = library.slice().sort((a,b)=>b.added.localeCompare(a.added)).slice(0,5);
+
+  let html = `
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-label">Manga totali</div><div class="stat-val">${total}</div></div>
+    <div class="stat-card"><div class="stat-label">Capitoli letti</div><div class="stat-val">${chapters.toLocaleString()}</div></div>
+    <div class="stat-card"><div class="stat-label">Voto medio</div><div class="stat-val">${avg}</div></div>
+    <div class="stat-card"><div class="stat-label">Preferiti</div><div class="stat-val">${favs.length}</div></div>
+  </div>
+  <div class="card">
+    <div class="section-label">Recenti</div>`;
+
+  recenti.forEach(m => {
+    html += `<div onclick="openDetail(${m.id})" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;">
+      ${coverImg(m,36)}
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(m.title)}</div>
+        <div style="font-size:11px;color:var(--muted);">${esc(m.genre)}</div>
+      </div>
+      ${badge(m.status,true)}
+    </div>`;
+  });
+  html += `</div>`;
+
+  if (favs.length) {
+    html += `<div class="card"><div class="section-label">★ Preferiti</div>`;
+    favs.forEach(m => {
+      html += `<div onclick="openDetail(${m.id})" style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer;">
+        ${coverImg(m,32)}
+        <span style="flex:1;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(m.title)}</span>
+        ${m.score>0?star(m.score):""}
+      </div>`;
+    });
+    html += `</div>`;
+  }
+  return html;
+}
+
+// ─── LIBRARY ──────────────────────────────────────────────────────────────────
+function renderLibrary() {
+  let list = library.filter(m => libFilter==="Tutti" || m.status===libFilter)
+    .filter(m => m.title.toLowerCase().includes(libSearch.toLowerCase()));
+  if (libSort==="title")    list.sort((a,b)=>a.title.localeCompare(b.title));
+  if (libSort==="score")    list.sort((a,b)=>b.score-a.score);
+  if (libSort==="chapters") list.sort((a,b)=>b.chapters-a.chapters);
+  if (libSort==="added")    list.sort((a,b)=>b.added.localeCompare(a.added));
+
+  let html = `<input type="search" id="lib-search" value="${esc(libSearch)}" placeholder="🔍 Cerca nella libreria..." oninput="libSearch=this.value;render()" style="margin-bottom:10px;">
+  <div class="chips">
+    <button class="chip${libFilter==='Tutti'?' active':''}" onclick="libFilter='Tutti';render()">Tutti</button>`;
+  STATUS.forEach(s => {
+    html += `<button class="chip${libFilter===s?' active':''}" onclick="libFilter='${s}';render()" style="${libFilter===s?`background:${STATUS_COLORS[s]};border-color:${STATUS_COLORS[s]};color:#fff;`:''}">${s}</button>`;
+  });
+  html += `</div><div class="sort-pills">`;
+  [["title","A-Z"],["score","Voto"],["chapters","Cap."],["added","Data"]].forEach(([v,l]) => {
+    html += `<button class="sort-pill${libSort===v?' active':''}" onclick="libSort='${v}';render()">${l}</button>`;
+  });
+  html += `</div>`;
+
+  if (!list.length) {
+    html += `<div class="empty"><div class="empty-icon">◫</div>Nessun manga trovato</div>`;
+    return html;
+  }
+  list.forEach(m => {
+    html += `<div class="card" onclick="openDetail(${m.id})" style="cursor:pointer;">
+      <div class="manga-row">
+        ${coverImg(m,52)}
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:800;font-size:14px;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(m.title)}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:4px;">
+            ${badge(m.status,true)}
+            ${m.score>0?star(m.score):""}
+          </div>
+          <div style="font-size:11px;color:var(--muted);">${m.chapters} cap. letti${m.total?` / ${m.total}`:""}</div>
+          ${m.total?`<div class="prog-bg" style="margin-top:6px;"><div class="prog-fill" style="width:${pct(m)}%;"></div></div>`:""}
+        </div>
+        ${m.fav?`<span style="color:#f1c40f;font-size:16px;flex-shrink:0;">★</span>`:""}
+      </div>
+    </div>`;
+  });
+  return html;
+}
+
+// ─── SEARCH ───────────────────────────────────────────────────────────────────
+function renderSearch() {
+  let html = `<div style="font-weight:800;font-size:18px;margin-bottom:12px;color:var(--red);">Cerca Online</div>
+  <input type="search" id="online-search" value="${esc(searchQ)}" placeholder="Cerca su MyAnimeList..." oninput="onSearchInput(this.value)" style="margin-bottom:12px;" autofocus>`;
+
+  if (searching) {
+    html += `<div class="empty">Ricerca in corso...</div>`;
+  } else if (!searchQ.trim()) {
+    html += `<div class="empty"><div class="empty-icon">◎</div>Cerca qualsiasi manga su MyAnimeList</div>`;
+  } else if (!searchResults.length) {
+    html += `<div class="empty">Nessun risultato per "${esc(searchQ)}"</div>`;
+  } else {
+    searchResults.forEach(m => {
+      const title = m.title_english || m.title;
+      const genres = (m.genres||[]).slice(0,2).map(g=>g.name).join(", ");
+      const img = m.images?.jpg?.image_url || "";
+      html += `<div class="result-card"><div class="manga-row">
+        ${img?`<img src="${img}" alt="${esc(title)}" style="width:52px;height:73px;border-radius:6px;object-fit:cover;flex-shrink:0;">`:`<div class="cover-ph" style="width:52px;height:73px;"><span style="font-size:14px;">${title.slice(0,2).toUpperCase()}</span></div>`}
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:800;font-size:13px;margin-bottom:2px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${esc(title)}</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">${genres}${m.chapters?` · ${m.chapters} cap.`:""}</div>
+          ${m.score?`<div style="font-size:11px;color:#f1c40f;margin-bottom:6px;">★ ${m.score}</div>`:""}
+          <button class="btn btn-primary" style="padding:6px 14px;font-size:12px;" onclick="addToLibrary(${m.mal_id})">+ Aggiungi</button>
+        </div>
+      </div></div>`;
+    });
+  }
+  return html;
+}
+
+function onSearchInput(val) {
+  searchQ = val;
+  clearTimeout(searchTimer);
+  if (!val.trim()) { searchResults = []; render(); return; }
+  searching = true; render();
+  searchTimer = setTimeout(() => {
+    fetch(`https://api.jikan.moe/v4/manga?q=${encodeURIComponent(val)}&limit=10`)
+      .then(r=>r.json()).then(d=>{ searchResults=d.data||[]; searching=false; render(); })
+      .catch(()=>{ searchResults=[]; searching=false; render(); });
+  }, 420);
+}
+
+function addToLibrary(malId) {
+  const m = searchResults.find(r=>r.mal_id===malId); if(!m) return;
+  const title = m.title_english||m.title;
+  if (library.find(x=>x.title===title)) { toast("Già in libreria!"); return; }
+  library.unshift({ id:Date.now(), title, status:"Da leggere", chapters:0, total:m.chapters||null, score:0, genre:m.genres?.[0]?.name||"Action", cover:m.images?.jpg?.image_url||null, added:new Date().toISOString().split("T")[0], fav:false, review:"" });
+  save(); toast(`"${title}" aggiunto!`); render();
+}
+
+// ─── STATS ────────────────────────────────────────────────────────────────────
+function renderStats() {
+  const total = library.length;
+  const chapters = library.reduce((a,m)=>a+m.chapters,0);
+  const scored = library.filter(m=>m.score>0);
+  const avg = scored.length?(scored.reduce((a,m)=>a+m.score,0)/scored.length).toFixed(1):"—";
+  const favs = library.filter(m=>m.fav).length;
+
+  const byStatus = STATUS.map(s=>({label:s,val:library.filter(m=>m.status===s).length,color:STATUS_COLORS[s]})).filter(x=>x.val>0);
+  const genreMap = {};
+  library.forEach(m=>{ genreMap[m.genre]=(genreMap[m.genre]||0)+1; });
+  const byGenre = Object.entries(genreMap).map(([label,val],i)=>({label,val,color:GENRE_COLORS[i%GENRE_COLORS.length]})).sort((a,b)=>b.val-a.val).slice(0,6);
+
+  let html = `<div style="font-weight:800;font-size:18px;margin-bottom:14px;color:var(--red);">Statistiche</div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-label">Totale manga</div><div class="stat-val">${total}</div></div>
+    <div class="stat-card"><div class="stat-label">Capitoli</div><div class="stat-val">${chapters.toLocaleString()}</div></div>
+    <div class="stat-card"><div class="stat-label">Voto medio</div><div class="stat-val">${avg}</div></div>
+    <div class="stat-card"><div class="stat-label">Preferiti</div><div class="stat-val">${favs}</div></div>
+  </div>`;
+
+  html += donutCard("Distribuzione stati", byStatus);
+  if (byGenre.length) html += donutCard("Generi più letti", byGenre);
+  return html;
+}
+
+function donutCard(title, data) {
+  const tot = data.reduce((a,d)=>a+d.val,0); if(!tot) return "";
+  const size=120, r=40, cx=60, cy=60, stroke=18;
+  let offset=0;
+  let paths="";
+  data.forEach(d=>{
+    const p=d.val/tot;
+    const a1=(offset*2*Math.PI)-(Math.PI/2), a2=((offset+p)*2*Math.PI)-(Math.PI/2);
+    const x1=cx+r*Math.cos(a1), y1=cy+r*Math.sin(a1);
+    const x2=cx+r*Math.cos(a2), y2=cy+r*Math.sin(a2);
+    const large=p>0.5?1:0;
+    paths+=`<path d="M${cx} ${cy} L${x1} ${y1} A${r} ${r} 0 ${large} 1 ${x2} ${y2} Z" fill="${d.color}" opacity=".85"/>`;
+    offset+=p;
+  });
+
+  let legend="";
+  data.forEach(d=>{
+    legend+=`<div class="legend-row"><div class="legend-dot" style="background:${d.color};"></div><span style="font-size:11px;flex:1;color:var(--text);">${esc(d.label)}</span><span style="font-size:12px;font-weight:700;color:${d.color};">${d.val}</span></div>`;
+  });
+
+  return `<div class="card"><div class="section-label">${title}</div>
+  <div style="display:flex;align-items:center;gap:16px;">
+    <svg width="${size}" height="${size}" style="flex-shrink:0;">
+      ${paths}
+      <circle cx="${cx}" cy="${cy}" r="${r-stroke}" fill="var(--card)"/>
+      <text x="${cx}" y="${cy+5}" text-anchor="middle" fill="var(--text)" font-size="14" font-weight="700">${tot}</text>
+    </svg>
+    <div style="flex:1;">${legend}</div>
+  </div></div>`;
+}
+
+// ─── SETTINGS ─────────────────────────────────────────────────────────────────
+function renderSettings() {
+  return `<div style="font-weight:800;font-size:18px;margin-bottom:14px;color:var(--red);">Impostazioni</div>
+  <div class="card" style="display:flex;align-items:center;justify-content:space-between;">
+    <div>
+      <div style="font-weight:700;font-size:14px;">Filtro NSFW</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px;">Nasconde contenuti espliciti</div>
+    </div>
+    <div class="toggle-track${nsfwOn?' on':''}" onclick="nsfwOn=!nsfwOn;render()"><div class="toggle-thumb"></div></div>
+  </div>
+  <div class="card">
+    <div style="font-weight:700;font-size:14px;margin-bottom:8px;">Generi bloccati</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;">
+      ${["Hentai","Ecchi","Erotica","Adult Cast","Explicit"].map(g=>`<span style="background:var(--red-dim);color:var(--red);border:1px solid #e74c3c44;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;">${g} ✕</span>`).join("")}
+    </div>
+  </div>
+  <div class="card">
+    <div style="font-weight:700;font-size:14px;margin-bottom:4px;">Esporta libreria</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Condividi il profilo con gli amici</div>
+    <button class="btn btn-primary" onclick="exportLib()">⬇ Esporta JSON</button>
+  </div>
+  <div class="card">
+    <div style="font-weight:700;font-size:14px;margin-bottom:4px;">Info</div>
+    <div style="font-size:12px;color:var(--muted);">MangaTrack v1.0 · Jikan API v4 · Tema Shonen Jump</div>
+  </div>`;
+}
+
+function exportLib() {
+  const data = JSON.stringify({library, exported: new Date().toISOString()}, null, 2);
+  const a = document.createElement("a");
+  a.href = "data:application/json;charset=utf-8," + encodeURIComponent(data);
+  a.download = "mangatrack_profile.json";
+  a.click();
+}
+
+// ─── DETAIL ───────────────────────────────────────────────────────────────────
+function renderDetail() {
+  const m = currentDetail;
+  const c = document.getElementById("content");
+  document.getElementById("back-title").textContent = m.title;
+
+  let statusBtns = STATUS.map(s => {
+    const col = STATUS_COLORS[s];
+    const active = m.status === s;
+    return `<button onclick="setDetailField('status','${s}')" style="background:${active?col+'44':col+'11'};color:${col};border:${active?`1.5px solid ${col}`:`1px solid ${col}44`};border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;">${s}</button>`;
+  }).join("");
+
+  c.innerHTML = `
+  <div class="detail-meta">
+    ${coverImg(m,80)}
+    <div style="flex:1;">
+      <div style="font-weight:800;font-size:16px;margin-bottom:6px;line-height:1.3;">${esc(m.title)}</div>
+      <div style="margin-bottom:6px;">${badge(m.status)}</div>
+      <div style="font-size:12px;color:var(--muted);">${esc(m.genre)}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px;">Aggiunto: ${m.added}</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-label">Stato</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;">${statusBtns}</div>
+  </div>
+
+  <div class="card">
+    <div class="section-label">Progresso</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:${m.total?'10px':'0'};">
+      <span style="font-size:13px;color:var(--muted);width:90px;">Capitoli letti</span>
+      <input type="number" min="0" id="d-chapters" value="${m.chapters}" onchange="setDetailField('chapters',parseInt(this.value)||0)" style="width:80px;text-align:center;">
+      ${m.total?`<span style="color:var(--muted);font-size:13px;">/ ${m.total}</span>`:""}
+    </div>
+    ${m.total?`<div class="prog-bg"><div class="prog-fill" id="d-prog" style="width:${pct(m)}%;"></div></div>`:""}
+  </div>
+
+  <div class="card">
+    <div class="section-label">Voto</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span id="d-score-val" style="font-size:22px;color:#f1c40f;font-weight:900;min-width:28px;">${m.score||"—"}</span>
+      <input type="range" min="0" max="10" step="1" id="d-score" value="${m.score}" oninput="setDetailField('score',parseInt(this.value));document.getElementById('d-score-val').textContent=this.value||'—'">
+      <span style="color:var(--muted);font-size:12px;">/10</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-label">Recensione</div>
+    <textarea id="d-review" rows="3" placeholder="Scrivi qualcosa..." onchange="setDetailField('review',this.value)">${esc(m.review)}</textarea>
+  </div>
+
+  <div style="display:flex;gap:10px;margin-bottom:10px;">
+    <button class="btn${m.fav?' btn-primary':''}" style="flex:1;" onclick="setDetailField('fav',!currentDetail.fav);render()">
+      ${m.fav?"★ Preferito":"☆ Aggiungi ai preferiti"}
+    </button>
+  </div>
+  <div style="display:flex;gap:10px;">
+    <button class="btn btn-primary" style="flex:2;" onclick="saveDetail()">Salva</button>
+    <button class="btn btn-danger" style="flex:1;" onclick="deleteDetail()">Rimuovi</button>
+  </div>`;
+}
+
+function setDetailField(key, val) {
+  currentDetail[key] = val;
+  if (key==="status") renderDetail();
+  if (key==="fav") renderDetail();
+}
+
+function saveDetail() {
+  const idx = library.findIndex(m=>m.id===currentDetail.id);
+  if (idx>-1) { library[idx] = {...currentDetail}; save(); }
+  toast("Salvato!");
+}
+
+function deleteDetail() {
+  library = library.filter(m=>m.id!==currentDetail.id);
+  save(); closeDetail(); toast("Rimosso dalla libreria.");
+}
+
+function attachListeners() {}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+render();
+</script>
+
+<!-- Service Worker registration -->
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js");
+}
+</script>
+</body>
+</html>
