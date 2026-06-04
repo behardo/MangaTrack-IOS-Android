@@ -638,9 +638,13 @@ async function renderFollowing(el){
   }catch(e){el.innerHTML=`<div class="empty">Errore: ${e.message}</div>`}
 }
 
-function renderFindUsers(el){
-  el.innerHTML=`<input type="search" id="user-search-input" placeholder="🔍 Cerca per username..." oninput="searchUsers(this.value)" style="margin-bottom:12px;"><div id="user-search-results"><div class="empty"><span class="empty-icon">🔍</span>Cerca un utente per username</div></div>`;
-}
+    function renderFindUsers(el) {
+        el.innerHTML = `<input type="search" id="user-search-input" placeholder="🔍 Cerca per username..." style="margin-bottom:12px;"><div id="user-search-results"><div class="empty"><span class="empty-icon">◎</span>Cerca un utente per username</div></div>`;
+        setTimeout(() => {
+            const inp = document.getElementById("user-search-input");
+            if (inp) inp.addEventListener("input", e => searchUsers(e.target.value));
+        }, 50);
+    }
 
 async function searchUsers(v){
   const el=document.getElementById("user-search-results");if(!el)return;
