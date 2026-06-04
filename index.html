@@ -581,7 +581,7 @@ async function searchUsers(v){
   el.innerHTML=`<div class="empty">Ricerca in corso...</div>`;
   userSearchTimer=setTimeout(async()=>{
     try{
-      const results=await safeDbQ("profiles",`username=ilike.%${v}%&select=id,username,avatar_color&limit=10`);
+      const results=await safeDbQ("profiles",`username=ilike.%25${encodeURIComponent(v)}%25&select=id,username,avatar_color&limit=10`);
       const myFollows=await safeDbQ("follows",`follower_id=eq.${session.user.id}&select=following_id`);
       const followingIds=myFollows.map(f=>f.following_id);
       const filtered=results.filter(p=>p.id!==session.user.id);
