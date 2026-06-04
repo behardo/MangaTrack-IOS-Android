@@ -10,7 +10,6 @@
   <link rel="manifest" href="manifest.json"/>
   <link rel="apple-touch-icon" href="icon-192.png"/>
   <title>MangaTrack</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
     html{-webkit-text-size-adjust:100%;height:100%}
@@ -78,9 +77,6 @@
     .auth-tab.active{background:var(--red);color:#fff}
     .auth-field{margin-bottom:12px}
     .auth-field label{font-size:12px;color:var(--muted);margin-bottom:5px;display:block;font-weight:600}
-    .divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--muted);font-size:12px}
-    .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
-    .google-btn{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;width:100%;font-size:14px;font-weight:600;color:var(--text);display:flex;align-items:center;justify-content:center;gap:10px}
     .auth-err{background:#e74c3c18;border:1px solid #e74c3c44;border-radius:10px;padding:10px 12px;font-size:13px;color:var(--redl);margin-bottom:12px;display:none}
     #loader{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:400;flex-direction:column;gap:12px}
     .spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite}
@@ -147,16 +143,13 @@
 </div>
 
 <div id="preview-modal" onclick="closePreview(event)">
-  <div id="preview-sheet">
-    <div class="preview-handle"></div>
-    <div class="preview-body" id="preview-body"></div>
-  </div>
+  <div id="preview-sheet"><div class="preview-handle"></div><div class="preview-body" id="preview-body"></div></div>
 </div>
 
 <div id="rec-modal" style="position:fixed;inset:0;background:#000a;z-index:110;display:none;align-items:flex-end;justify-content:center;">
   <div style="background:var(--surface);border-radius:22px 22px 0 0;width:100%;max-width:430px;padding:0 18px calc(var(--safe-bot)+16px);animation:slideUp .28s ease">
     <div class="preview-handle"></div>
-    <div style="font-weight:800;font-size:16px;margin-bottom:4px;" id="rec-title">Consiglia manga</div>
+    <div style="font-weight:800;font-size:16px;margin-bottom:4px;" id="rec-title"></div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:14px;" id="rec-sub"></div>
     <div id="rec-picker" style="max-height:180px;overflow-y:auto;margin-bottom:12px;"></div>
     <div class="auth-field"><label>Messaggio (opzionale)</label><textarea id="rec-msg" rows="3" placeholder="Dovresti assolutamente leggere questo..."></textarea></div>
@@ -189,57 +182,32 @@
 <script>
 const SB="https://afkreberztrjuuhaifkr.supabase.co";
 const KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFma3JlYmVyenRyanV1aGFpZmtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NDk0MjksImV4cCI6MjA5NjEyNTQyOX0.wpiOO4AwT6HtY18o1e2DV8BbF46vWT8SIXxfunD3kA4";
-const supa=supabase.createClient(SB,KEY);
 let session=null;
 
-async function safeDbQ(table,filters){
-  let q=supa.from(table).select("*");
-  if(filters)q=filters(q);
-  const {data,error}=await q;
-  if(error)throw new Error(error.message);
-  return data||[];
-}
-async function dbIns(table,data){
-  const {data:d,error}=await supa.from(table).insert(data).select();
-  if(error)throw new Error(error.message);
+async function api(path,opts={}){
+  const h={"apikey":KEY,"Content-Type":"application/json",...(opts.headers||{})};
+  if(session?.access_token)h["Authorization"]="Bearer "+session.access_token;
+  const r=await fetch(SB+path,{...opts,headers:h});
+  if(r.status===204)return null;
+  const d=await r.json();
+  if(!r.ok)throw new Error(d.error_description||d.message||d.msg||JSON.stringify(d));
   return d;
 }
-async function dbUpd(table,match,data){
-  let q=supa.from(table).update(data);
-  Object.entries(match).forEach(([k,v])=>q=q.eq(k,v));
-  const {error}=await q;
-  if(error)throw new Error(error.message);
-}
-async function dbDel(table,match){
-  let q=supa.from(table).delete();
-  Object.entries(match).forEach(([k,v])=>q=q.eq(k,v));
-  const {error}=await q;
-  if(error)throw new Error(error.message);
-}
+const q=(table,qs)=>api(`/rest/v1/${table}?${qs}`);
+const ins=(table,data)=>api(`/rest/v1/${table}`,{method:"POST",headers:{"Prefer":"return=representation"},body:JSON.stringify(data)});
+const upd=(table,match,data)=>api(`/rest/v1/${table}?${match}`,{method:"PATCH",headers:{"Prefer":"return=representation"},body:JSON.stringify(data)});
+const del=(table,match)=>api(`/rest/v1/${table}?${match}`,{method:"DELETE"});
 
-async function authSignIn(e,p){
-  const {data,error}=await supa.auth.signInWithPassword({email:e,password:p});
-  if(error)throw new Error(error.message);
-  return data.session;
-}
-async function authSignUp(e,p){
-  const {data,error}=await supa.auth.signUp({email:e,password:p});
-  if(error)throw new Error(error.message);
-  return data.session;
-}
-function signInGoogle(){supa.auth.signInWithOAuth({provider:"google",options:{redirectTo:location.origin}})}
-async function authSignOut(){await supa.auth.signOut();session=null;localStorage.removeItem("mt_s")}
-async function refreshSess(){
-  const {data,error}=await supa.auth.refreshSession();
-  if(error)throw new Error(error.message);
-  return data.session;
-}
+async function signIn(e,p){return api("/auth/v1/token?grant_type=password",{method:"POST",body:JSON.stringify({email:e,password:p})})}
+async function signUp(e,p){return api("/auth/v1/signup",{method:"POST",body:JSON.stringify({email:e,password:p})})}
+async function signOut(){await api("/auth/v1/logout",{method:"POST"}).catch(()=>{});session=null;localStorage.removeItem("mt_s")}
+async function refreshToken(rt){return api("/auth/v1/token?grant_type=refresh_token",{method:"POST",body:JSON.stringify({refresh_token:rt})})}
 
 const STATUS=["In lettura","Completati","In pausa","Abbandonati","Da leggere"];
 const SC={"In lettura":"#e74c3c","Completati":"#27ae60","In pausa":"#f39c12","Abbandonati":"#7f8c8d","Da leggere":"#3498db"};
 const GC=["#e74c3c","#3498db","#27ae60","#f39c12","#9b59b6","#1abc9c","#e67e22","#2980b9"];
-const AVATAR_COLORS=["#c0392b","#a93226","#922b21","#7b241c","#e74c3c","#cd6155"];
-const STATUS_META={"In lettura":{icon:"📖",desc:"Stai leggendo"},"Completati":{icon:"✅",desc:"Finito"},"In pausa":{icon:"⏸️",desc:"In sospeso"},"Abbandonati":{icon:"🚫",desc:"Lasciato perdere"},"Da leggere":{icon:"🔖",desc:"Lista desideri"}};
+const AC=["#c0392b","#a93226","#922b21","#7b241c","#e74c3c","#cd6155"];
+const SM={"In lettura":{icon:"📖",desc:"Stai leggendo"},"Completati":{icon:"✅",desc:"Finito"},"In pausa":{icon:"⏸️",desc:"In sospeso"},"Abbandonati":{icon:"🚫",desc:"Lasciato perdere"},"Da leggere":{icon:"🔖",desc:"Lista desideri"}};
 
 let library=[],myProfile=null;
 let tab="home",detail=null,backStack=[];
@@ -247,28 +215,37 @@ let libFilter="Tutti",libSort="title",libSearch="";
 let searchQ="",searchResults=[],searching=false,searchTimer=null;
 let socialTab="feed",viewingUser=null;
 let previewManga=null,recTarget=null,recManga=null;
-let pendingRecs=0;
-let userSearchTimer=null;
+let pendingRecs=0,userSearchTimer=null;
 
 async function init(){
-  // il client supabase gestisce la sessione automaticamente
-  const {data:{session:s},error}=await supa.auth.getSession();
-  if(s){
-    session=s;
-    session.user=s.user;
+  const hash=location.hash;
+  if(hash.includes("access_token")){
+    const p=new URLSearchParams(hash.slice(1));
+    session={access_token:p.get("access_token"),refresh_token:p.get("refresh_token"),user:null};
+    const u=await api("/auth/v1/user").catch(()=>null);
+    if(u?.id){session.user=u;localStorage.setItem("mt_s",JSON.stringify(session))}
+    history.replaceState(null,"",location.pathname);
+  }
+  if(!session){
+    const saved=localStorage.getItem("mt_s");
+    if(saved){
+      try{
+        session=JSON.parse(saved);
+        const r=await refreshToken(session.refresh_token).catch(()=>null);
+        if(r?.access_token){session={...r,user:r.user};localStorage.setItem("mt_s",JSON.stringify(session))}
+        else{session=null;localStorage.removeItem("mt_s")}
+      }catch{session=null}
+    }
   }
   document.getElementById("loader").style.display="none";
   if(!session?.access_token){showAuth();return}
-  const profiles=await safeDbQ("profiles",q=>q.eq("id",session.user.id)).catch(()=>[]);
-  if(!profiles.length){document.getElementById("username-screen").style.display="flex";return}
+  const profiles=await q("profiles",`id=eq.${session.user.id}&select=*`).catch(()=>[]);
+  if(!profiles||!profiles.length){document.getElementById("username-screen").style.display="flex";return}
   myProfile=profiles[0];
-  await startApp();
-}
-
-async function startApp(){
   showApp();updateHeaderAvatar();
   await Promise.all([loadLibrary(),checkPendingRecs()]);
 }
+
 function showAuth(){document.getElementById("auth-screen").style.display="flex";document.getElementById("app").style.display="none"}
 function showApp(){document.getElementById("auth-screen").style.display="none";document.getElementById("username-screen").style.display="none";document.getElementById("app").style.display="flex"}
 function updateHeaderAvatar(){
@@ -276,13 +253,13 @@ function updateHeaderAvatar(){
   document.getElementById("header-avatar").innerHTML=`<div class="avatar" style="width:34px;height:34px;font-size:14px;background:${myProfile.avatar_color};cursor:pointer;box-shadow:0 0 0 2px ${myProfile.avatar_color}55;" onclick="switchTab('settings')">${myProfile.username[0].toUpperCase()}</div>`;
 }
 async function loadLibrary(){
-  try{library=await safeDbQ("library","select=*&order=created_at.desc")}catch{library=[]}
+  try{library=await q("library","select=*&order=created_at.desc")||[]}catch{library=[]}
   render();
 }
 async function checkPendingRecs(){
   try{
-    const recs=await safeDbQ("recommendations",`to_id=eq.${session.user.id}&select=id`);
-    pendingRecs=recs.length;
+    const r=await q("recommendations",`to_id=eq.${session.user.id}&select=id`)||[];
+    pendingRecs=r.length;
     document.getElementById("social-dot").style.display=pendingRecs>0?"block":"none";
   }catch{}
 }
@@ -296,6 +273,7 @@ function setAuthTab(t){
   document.getElementById("auth-err").style.display="none";
 }
 function showAuthErr(msg){const e=document.getElementById("auth-err");e.textContent=msg;e.style.display="block"}
+
 async function submitAuth(){
   const email=document.getElementById("auth-email").value.trim();
   const pass=document.getElementById("auth-pass").value;
@@ -305,33 +283,41 @@ async function submitAuth(){
   const btn=document.getElementById("auth-submit-btn");btn.textContent="...";btn.disabled=true;
   try{
     if(authTabState==="login"){
-      session=await authSignIn(email,pass);
-      session.user=session.user||(await supa.auth.getUser()).data.user;
-      const profiles=await safeDbQ("profiles",q=>q.eq("id",session.user.id)).catch(()=>[]);
-      if(!profiles.length){document.getElementById("username-screen").style.display="flex";btn.textContent="Accedi";btn.disabled=false;return}
-      myProfile=profiles[0];await startApp();
+      const data=await signIn(email,pass);
+      if(data?.access_token){
+        session={...data,user:data.user};localStorage.setItem("mt_s",JSON.stringify(session));
+        const profiles=await q("profiles",`id=eq.${session.user.id}&select=*`).catch(()=>[]);
+        if(!profiles||!profiles.length){document.getElementById("username-screen").style.display="flex";btn.textContent="Accedi";btn.disabled=false;return}
+        myProfile=profiles[0];showApp();updateHeaderAvatar();
+        await Promise.all([loadLibrary(),checkPendingRecs()]);
+      }
     }else{
-      const ex=await safeDbQ("profiles",q=>q.eq("username",username).select("id")).catch(()=>[]);
-      if(ex.length>0){showAuthErr("Username già in uso");btn.textContent="Crea account";btn.disabled=false;return}
-      session=await authSignUp(email,pass);
-      if(!session){showAuthErr("Controlla la tua email.");btn.textContent="Crea account";btn.disabled=false;return}
-      session.user=(await supa.auth.getUser()).data.user;
-      const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
-      await dbIns("profiles",{id:session.user.id,username,avatar_color:color});
-      myProfile={id:session.user.id,username,avatar_color:color};
-      await startApp();
+      const ex=await q("profiles",`username=eq.${encodeURIComponent(username)}&select=id`).catch(()=>[]);
+      if(ex&&ex.length>0){showAuthErr("Username già in uso");btn.textContent="Crea account";btn.disabled=false;return}
+      const data=await signUp(email,pass);
+      if(data?.access_token){
+        session={...data,user:data.user};localStorage.setItem("mt_s",JSON.stringify(session));
+        const color=AC[Math.floor(Math.random()*AC.length)];
+        await ins("profiles",{id:session.user.id,username,avatar_color:color});
+        myProfile={id:session.user.id,username,avatar_color:color};
+        showApp();updateHeaderAvatar();
+        await Promise.all([loadLibrary(),checkPendingRecs()]);
+      }else{showAuthErr("Controlla la tua email.")}
     }
   }catch(e){showAuthErr(e.message)}
   btn.textContent=authTabState==="login"?"Accedi":"Crea account";btn.disabled=false;
 }
+
 async function setupUsername(){
   const username=document.getElementById("setup-username").value.trim();
   if(!username){document.getElementById("username-err").textContent="Inserisci un username";document.getElementById("username-err").style.display="block";return}
-  const ex=await safeDbQ("profiles",q=>q.eq("username",username).select("id")).catch(()=>[]);
-  if(ex.length>0){document.getElementById("username-err").textContent="Username già in uso";document.getElementById("username-err").style.display="block";return}
-  const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
-  await dbIns("profiles",{id:session.user.id,username,avatar_color:color});
-  myProfile={id:session.user.id,username,avatar_color:color};await startApp();
+  const ex=await q("profiles",`username=eq.${encodeURIComponent(username)}&select=id`).catch(()=>[]);
+  if(ex&&ex.length>0){document.getElementById("username-err").textContent="Username già in uso";document.getElementById("username-err").style.display="block";return}
+  const color=AC[Math.floor(Math.random()*AC.length)];
+  await ins("profiles",{id:session.user.id,username,avatar_color:color});
+  myProfile={id:session.user.id,username,avatar_color:color};
+  showApp();updateHeaderAvatar();
+  await Promise.all([loadLibrary(),checkPendingRecs()]);
 }
 
 let toastT=null;
@@ -355,22 +341,10 @@ function pushView(title,renderFn){
 }
 function goBack(){
   backStack.pop();
-  if(!backStack.length){
-    detail=null;viewingUser=null;
-    document.getElementById("header").style.display="";
-    document.getElementById("back-header").style.display="none";
-    document.getElementById("navbar").style.display="";
-    render();
-  }else{
-    const prev=backStack[backStack.length-1];
-    document.getElementById("back-title").textContent=prev.title;
-    document.getElementById("content").innerHTML=`<div class="fade-in">${prev.renderFn()}</div>`;
-  }
+  if(!backStack.length){detail=null;viewingUser=null;document.getElementById("header").style.display="";document.getElementById("back-header").style.display="none";document.getElementById("navbar").style.display="";render();}
+  else{const p=backStack[backStack.length-1];document.getElementById("back-title").textContent=p.title;document.getElementById("content").innerHTML=`<div class="fade-in">${p.renderFn()}</div>`;}
 }
-function openDetail(id){
-  detail=library.find(m=>m.id===id);if(!detail)return;
-  pushView(detail.title,renderDetailHTML);
-}
+function openDetail(id){detail=library.find(m=>m.id===id);if(!detail)return;pushView(detail.title,renderDetailHTML)}
 
 function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
 function coverImg(m,size){
@@ -382,10 +356,7 @@ function bdg(s,sm=false){const c=SC[s]||"#888";return `<span class="badge${sm?" 
 function starEl(sc){const c=sc>=8?"#f1c40f":sc>=6?"#e67e22":"#888";return `<span style="font-size:12px;font-weight:700;color:${c};">★ ${sc}/10</span>`}
 function pct(m){return m.total_chapters?Math.min(100,Math.round((m.chapters/m.total_chapters)*100)):0}
 function timeAgo(ts){const s=Math.floor((Date.now()-new Date(ts))/1000);if(s<60)return"ora";if(s<3600)return Math.floor(s/60)+"m fa";if(s<86400)return Math.floor(s/3600)+"h fa";return Math.floor(s/86400)+"g fa"}
-function avatarEl(profile,size=36){
-  const i=(profile?.username||"?")[0].toUpperCase(),c=profile?.avatar_color||"#c0392b";
-  return `<div class="avatar" style="width:${size}px;height:${size}px;font-size:${Math.round(size*.38)}px;background:${c};box-shadow:0 0 0 2px ${c}55;">${i}</div>`;
-}
+function avatarEl(profile,size=36){const i=(profile?.username||"?")[0].toUpperCase(),c=profile?.avatar_color||"#c0392b";return `<div class="avatar" style="width:${size}px;height:${size}px;font-size:${Math.round(size*.38)}px;background:${c};box-shadow:0 0 0 2px ${c}55;">${i}</div>`}
 
 function render(){
   if(detail){document.getElementById("content").innerHTML=`<div class="fade-in">${renderDetailHTML()}</div>`;return}
@@ -400,7 +371,7 @@ function renderHome(){
   const favs=library.filter(m=>m.favourite);
   const recent=[...library].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).slice(0,5);
   let h=`<div class="stat-grid">${[["Manga totali",tot],["Capitoli",chaps.toLocaleString()],["Voto medio",avg],["Preferiti",favs.length]].map(([l,v])=>`<div class="stat-card"><div class="stat-label">${l}</div><div class="stat-val">${v}</div></div>`).join("")}</div>`;
-  if(!library.length){h+=`<div class="empty"><span class="empty-icon">◫</span>Nessun manga in libreria.<br>Cerca qualcosa nella tab Cerca!</div>`;return h}
+  if(!library.length){h+=`<div class="empty"><span class="empty-icon">◫</span>Nessun manga in libreria.<br>Cerca nella tab Cerca!</div>`;return h}
   h+=`<div class="card"><div class="section-label">Aggiunti di recente</div>`;
   recent.forEach(m=>{h+=`<div class="card-tap" onclick="openDetail('${m.id}')" style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);">${coverImg(m,38)}<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(m.title)}</div><div style="font-size:11px;color:var(--muted);">${esc(m.genre||"")}</div></div>${bdg(m.status,true)}</div>`});
   h+=`</div>`;
@@ -410,9 +381,7 @@ function renderHome(){
 
 function renderLibrary(){
   return `<input type="search" id="lib-si" value="${esc(libSearch)}" placeholder="🔍 Cerca nella libreria..." oninput="onLibSearch(this.value)" style="margin-bottom:10px;">
-  <div class="chips" id="lib-chips">${libChips()}</div>
-  <div class="sort-pills" id="lib-sort">${libSortH()}</div>
-  <div id="lib-list">${libList()}</div>`;
+  <div class="chips" id="lib-chips">${libChips()}</div><div class="sort-pills" id="lib-sort">${libSortH()}</div><div id="lib-list">${libList()}</div>`;
 }
 function libChips(){let h=`<button class="chip${libFilter==="Tutti"?" active":""}" onclick="libFilter='Tutti';updateLib()">Tutti (${library.length})</button>`;STATUS.forEach(s=>{const n=library.filter(m=>m.status===s).length;if(n>0)h+=`<button class="chip${libFilter===s?" active":""}" onclick="libFilter='${s}';updateLib()" style="${libFilter===s?`background:${SC[s]};border-color:${SC[s]};color:#fff;`:""}">${s} (${n})</button>`});return h}
 function libSortH(){return [["title","A-Z"],["score","Voto"],["chapters","Cap."],["added","Data"]].map(([v,l])=>`<button class="sort-pill${libSort===v?" active":""}" onclick="libSort='${v}';updateLib()">${l}</button>`).join("")}
@@ -428,39 +397,15 @@ function libList(){
 function onLibSearch(v){libSearch=v;updateLib()}
 function updateLib(){const c=document.getElementById("lib-chips"),s=document.getElementById("lib-sort"),l=document.getElementById("lib-list");if(c)c.innerHTML=libChips();if(s)s.innerHTML=libSortH();if(l)l.innerHTML=libList()}
 
-function renderSearch(){
-  return `<div style="font-weight:800;font-size:18px;margin-bottom:12px;color:var(--red);">Cerca Online</div>
-  <input type="search" id="online-search" value="${esc(searchQ)}" placeholder="Cerca su MyAnimeList..." oninput="onSQ(this.value)" style="margin-bottom:12px;">
-  <div id="search-results"></div>`;
-}
-function onSQ(v){
-  searchQ=v;clearTimeout(searchTimer);
-  if(!v.trim()){searchResults=[];renderSearchResults();return}
-  searching=true;renderSearchResults();
-  searchTimer=setTimeout(()=>{
-    fetch(`https://api.jikan.moe/v4/manga?q=${encodeURIComponent(v)}&limit=10`)
-      .then(r=>r.json()).then(d=>{searchResults=d.data||[];searching=false;renderSearchResults()})
-      .catch(()=>{searchResults=[];searching=false;renderSearchResults()});
-  },500);
-}
+function renderSearch(){return `<div style="font-weight:800;font-size:18px;margin-bottom:12px;color:var(--red);">Cerca Online</div><input type="search" id="online-search" value="${esc(searchQ)}" placeholder="Cerca su MyAnimeList..." oninput="onSQ(this.value)" style="margin-bottom:12px;"><div id="search-results"></div>`}
+function onSQ(v){searchQ=v;clearTimeout(searchTimer);if(!v.trim()){searchResults=[];renderSearchResults();return}searching=true;renderSearchResults();searchTimer=setTimeout(()=>{fetch(`https://api.jikan.moe/v4/manga?q=${encodeURIComponent(v)}&limit=10`).then(r=>r.json()).then(d=>{searchResults=d.data||[];searching=false;renderSearchResults()}).catch(()=>{searchResults=[];searching=false;renderSearchResults()})},500)}
 function renderSearchResults(){
   const el=document.getElementById("search-results");if(!el)return;
   let h="";
   if(searching)h=`<div class="empty">🔍 Ricerca in corso...</div>`;
   else if(!searchQ.trim())h=`<div class="empty"><span class="empty-icon">◎</span>Cerca qualsiasi manga su MyAnimeList</div>`;
   else if(!searchResults.length)h=`<div class="empty">Nessun risultato per "${esc(searchQ)}"</div>`;
-  else searchResults.forEach((m,i)=>{
-    const title=m.title_english||m.title,img=m.images?.jpg?.image_url||"";
-    const genres=(m.genres||[]).slice(0,2).map(g=>g.name).join(", ");
-    const inLib=library.some(x=>x.title===title);
-    h+=`<div class="card card-tap" onclick="openPreview(${i})"><div class="manga-row">
-      ${img?`<img src="${esc(img)}" class="cover" style="width:54px;height:76px;" loading="lazy" onerror="this.style.display='none'">`:`<div class="cover-ph" style="width:54px;height:76px;"><span style="font-size:15px;">${title.slice(0,2).toUpperCase()}</span></div>`}
-      <div style="flex:1;min-width:0;"><div style="font-weight:800;font-size:13px;margin-bottom:3px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${esc(title)}</div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">${genres}${m.chapters?` · ${m.chapters} cap.`:""}</div>
-      ${m.score?`<div style="font-size:11px;color:#f1c40f;">★ ${m.score}</div>`:""}</div>
-      ${inLib?`<span style="font-size:11px;color:var(--muted);flex-shrink:0;align-self:center;">✓</span>`:`<span style="font-size:20px;color:var(--red);flex-shrink:0;align-self:center;">+</span>`}
-    </div></div>`;
-  });
+  else searchResults.forEach((m,i)=>{const title=m.title_english||m.title,img=m.images?.jpg?.image_url||"";const genres=(m.genres||[]).slice(0,2).map(g=>g.name).join(", ");const inLib=library.some(x=>x.title===title);h+=`<div class="card card-tap" onclick="openPreview(${i})"><div class="manga-row">${img?`<img src="${esc(img)}" class="cover" style="width:54px;height:76px;" loading="lazy" onerror="this.style.display='none'">`:`<div class="cover-ph" style="width:54px;height:76px;"><span style="font-size:15px;">${title.slice(0,2).toUpperCase()}</span></div>`}<div style="flex:1;min-width:0;"><div style="font-weight:800;font-size:13px;margin-bottom:3px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${esc(title)}</div><div style="font-size:11px;color:var(--muted);margin-bottom:4px;">${genres}${m.chapters?` · ${m.chapters} cap.`:""}</div>${m.score?`<div style="font-size:11px;color:#f1c40f;">★ ${m.score}</div>`:""}</div>${inLib?`<span style="font-size:11px;color:var(--muted);flex-shrink:0;align-self:center;">✓</span>`:`<span style="font-size:20px;color:var(--red);flex-shrink:0;align-self:center;">+</span>`}</div></div>`});
   el.innerHTML=h;
 }
 function openPreview(idx){
@@ -469,16 +414,7 @@ function openPreview(idx){
   const inLib=library.some(x=>x.title===title);
   const genres=(m.genres||[]).map(g=>g.name).join(", ");
   const synopsis=m.synopsis?m.synopsis.replace(/\[Written by MAL Rewrite\]/g,"").trim():"";
-  document.getElementById("preview-body").innerHTML=`
-    <div style="display:flex;gap:14px;margin-bottom:16px;">${img?`<img src="${esc(img)}" class="cover" style="width:90px;height:126px;">`:`<div class="cover-ph" style="width:90px;height:126px;"><span style="font-size:22px;">${title.slice(0,2).toUpperCase()}</span></div>`}
-    <div style="flex:1;"><div style="font-weight:900;font-size:16px;margin-bottom:6px;line-height:1.3;">${esc(title)}</div>
-    ${m.score?`<div style="font-size:14px;color:#f1c40f;font-weight:700;margin-bottom:4px;">★ ${m.score}</div>`:""}
-    ${m.rank?`<div style="font-size:12px;color:var(--muted);">Rank #${m.rank}</div>`:""}</div></div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">${genres?genres.split(", ").map(g=>`<span style="background:var(--redd);color:var(--red);border:1px solid #e74c3c44;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;">${esc(g)}</span>`).join(""):""}</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">${[["Capitoli",m.chapters||"?"],["Volumi",m.volumes||"?"],["Tipo",m.type||"?"]].map(([l,v])=>`<div style="background:var(--card);border-radius:10px;border:1px solid var(--border);padding:10px;text-align:center;"><div style="font-size:10px;color:var(--muted);margin-bottom:3px;">${l}</div><div style="font-size:15px;font-weight:800;">${v}</div></div>`).join("")}</div>
-    ${synopsis?`<div style="margin-bottom:16px;"><div class="section-label">Sinossi</div><div style="font-size:13px;color:#ccc;line-height:1.6;">${esc(synopsis.slice(0,400))}${synopsis.length>400?"…":""}</div></div>`:""}
-    ${inLib?`<button class="btn btn-block" style="margin-bottom:8px;color:var(--muted);">✓ Già in libreria</button>`:`<button class="btn btn-primary btn-block" style="margin-bottom:8px;" onclick="addFromPreview()">+ Aggiungi alla libreria</button>`}
-    <button class="btn btn-block" onclick="closePreview()" style="margin-bottom:8px;">Chiudi</button>`;
+  document.getElementById("preview-body").innerHTML=`<div style="display:flex;gap:14px;margin-bottom:16px;">${img?`<img src="${esc(img)}" class="cover" style="width:90px;height:126px;">`:`<div class="cover-ph" style="width:90px;height:126px;"><span style="font-size:22px;">${title.slice(0,2).toUpperCase()}</span></div>`}<div style="flex:1;"><div style="font-weight:900;font-size:16px;margin-bottom:6px;line-height:1.3;">${esc(title)}</div>${m.score?`<div style="font-size:14px;color:#f1c40f;font-weight:700;margin-bottom:4px;">★ ${m.score}</div>`:""}${m.rank?`<div style="font-size:12px;color:var(--muted);">Rank #${m.rank}</div>`:""}</div></div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">${genres?genres.split(", ").map(g=>`<span style="background:var(--redd);color:var(--red);border:1px solid #e74c3c44;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;">${esc(g)}</span>`).join(""):""}</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">${[["Capitoli",m.chapters||"?"],["Volumi",m.volumes||"?"],["Tipo",m.type||"?"]].map(([l,v])=>`<div style="background:var(--card);border-radius:10px;border:1px solid var(--border);padding:10px;text-align:center;"><div style="font-size:10px;color:var(--muted);margin-bottom:3px;">${l}</div><div style="font-size:15px;font-weight:800;">${v}</div></div>`).join("")}</div>${synopsis?`<div style="margin-bottom:16px;"><div class="section-label">Sinossi</div><div style="font-size:13px;color:#ccc;line-height:1.6;">${esc(synopsis.slice(0,400))}${synopsis.length>400?"…":""}</div></div>`:""} ${inLib?`<button class="btn btn-block" style="margin-bottom:8px;color:var(--muted);">✓ Già in libreria</button>`:`<button class="btn btn-primary btn-block" style="margin-bottom:8px;" onclick="addFromPreview()">+ Aggiungi alla libreria</button>`}<button class="btn btn-block" onclick="closePreview()" style="margin-bottom:8px;">Chiudi</button>`;
   document.getElementById("preview-modal").classList.add("open");
 }
 function closePreview(e){if(e&&e.target!==document.getElementById("preview-modal"))return;document.getElementById("preview-modal").classList.remove("open");previewManga=null}
@@ -487,12 +423,7 @@ async function addFromPreview(){
   const title=m.title_english||m.title;
   if(library.some(x=>x.title===title)){toast("Già in libreria!");closePreview();return}
   const manga={title,status:"Da leggere",chapters:0,total_chapters:m.chapters||null,score:0,genre:m.genres?.[0]?.name||"Action",cover:m.images?.jpg?.image_url||null,favourite:false,review:""};
-  try{
-    const res=await dbIns("library",{...manga,user_id:session.user.id});
-    library.unshift(res[0]||{...manga,id:Date.now()});
-    await dbIns("activity",{user_id:session.user.id,type:"added",manga_title:title,manga_cover:manga.cover,details:""}).catch(()=>{});
-    toast(`"${title}" aggiunto!`);closePreview();renderSearchResults();
-  }catch(e){toast("Errore: "+e.message)}
+  try{const res=await ins("library",{...manga,user_id:session.user.id});library.unshift(res[0]||{...manga,id:Date.now()});await ins("activity",{user_id:session.user.id,type:"added",manga_title:title,manga_cover:manga.cover,details:""}).catch(()=>{});toast(`"${title}" aggiunto!`);closePreview();renderSearchResults()}catch(e){toast("Errore: "+e.message)}
 }
 
 function renderSocial(){
@@ -506,7 +437,7 @@ function renderSocial(){
   <div id="social-content"><div class="empty"><div class="spinner" style="margin:0 auto;"></div></div></div>`;
 }
 async function updateSocial(){
-  document.querySelectorAll(".page-tab").forEach((b,i)=>{b.classList.toggle("active",["feed","following","find","recs"][i]===socialTab)});
+  document.querySelectorAll(".page-tab").forEach((b,i)=>b.classList.toggle("active",["feed","following","find","recs"][i]===socialTab));
   const el=document.getElementById("social-content");if(!el)return;
   el.innerHTML=`<div class="empty"><div class="spinner" style="margin:0 auto;"></div></div>`;
   try{
@@ -518,42 +449,29 @@ async function updateSocial(){
 }
 
 async function renderFeed(el){
-  const follows=await safeDbQ("follows",`follower_id=eq.${session.user.id}&select=following_id`);
-  if(!follows.length){el.innerHTML=`<div class="empty"><span class="empty-icon">◉</span>Non segui ancora nessuno.<br>Cerca amici nella tab Cerca!</div>`;return}
+  const follows=await q("follows",`follower_id=eq.${session.user.id}&select=following_id`)||[];
+  if(!follows.length){el.innerHTML=`<div class="empty"><span class="empty-icon">◉</span>Non segui ancora nessuno.</div>`;return}
   const ids=follows.map(f=>f.following_id);
-  const activity=await safeDbQ("activity",`user_id=in.(${ids.join(",")})&select=*&order=created_at.desc&limit=30`);
+  const activity=await q("activity",`user_id=in.(${ids.join(",")})&select=*&order=created_at.desc&limit=30`)||[];
   if(!activity.length){el.innerHTML=`<div class="empty"><span class="empty-icon">◈</span>Nessuna attività recente</div>`;return}
   const uids=[...new Set(activity.map(a=>a.user_id))];
-  const profiles=await safeDbQ("profiles",`id=in.(${uids.join(",")})&select=*`);
+  const profiles=await q("profiles",`id=in.(${uids.join(",")})&select=*`)||[];
   const pm={};profiles.forEach(p=>pm[p.id]=p);
   const tl={added:"ha aggiunto",completed:"ha completato",status_changed:"ha aggiornato",scored:"ha votato"};
-  el.innerHTML=activity.map(a=>{
-    const p=pm[a.user_id]||{username:"?",avatar_color:"#c0392b"};
-    return `<div class="act-item"><div onclick="openUserProfile('${a.user_id}')" style="cursor:pointer;">${avatarEl(p,36)}</div>
-    <div style="flex:1;min-width:0;"><div style="font-size:13px;"><strong onclick="openUserProfile('${a.user_id}')" style="cursor:pointer;">@${esc(p.username)}</strong> <span style="color:var(--muted);">${tl[a.type]||a.type}</span></div>
-    <div style="font-size:13px;font-weight:700;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(a.manga_title)}</div>
-    ${a.details?`<div style="font-size:11px;color:var(--muted);">${esc(a.details)}</div>`:""}
-    <div style="font-size:11px;color:var(--dim);margin-top:3px;">${timeAgo(a.created_at)}</div></div>
-    ${a.manga_cover?`<img src="${esc(a.manga_cover)}" style="width:36px;height:50px;border-radius:6px;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none'">`:""}
-    </div>`;
-  }).join("");
+  el.innerHTML=activity.map(a=>{const p=pm[a.user_id]||{username:"?",avatar_color:"#c0392b"};return `<div class="act-item"><div onclick="openUserProfile('${a.user_id}')" style="cursor:pointer;">${avatarEl(p,36)}</div><div style="flex:1;min-width:0;"><div style="font-size:13px;"><strong onclick="openUserProfile('${a.user_id}')" style="cursor:pointer;">@${esc(p.username)}</strong> <span style="color:var(--muted);">${tl[a.type]||a.type}</span></div><div style="font-size:13px;font-weight:700;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(a.manga_title)}</div>${a.details?`<div style="font-size:11px;color:var(--muted);">${esc(a.details)}</div>`:""}<div style="font-size:11px;color:var(--dim);margin-top:3px;">${timeAgo(a.created_at)}</div></div>${a.manga_cover?`<img src="${esc(a.manga_cover)}" style="width:36px;height:50px;border-radius:6px;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none'">`:""}</div>`}).join("");
 }
 
 async function renderFollowing(el){
-  const follows=await safeDbQ("follows",`follower_id=eq.${session.user.id}&select=following_id`);
+  const follows=await q("follows",`follower_id=eq.${session.user.id}&select=following_id`)||[];
   if(!follows.length){el.innerHTML=`<div class="empty"><span class="empty-icon">◫</span>Non segui ancora nessuno</div>`;return}
   const ids=follows.map(f=>f.following_id);
-  const profiles=await safeDbQ("profiles",`id=in.(${ids.join(",")})&select=*`);
-  el.innerHTML=`<div class="card">${profiles.map(p=>`<div class="user-card">
-    <div onclick="openUserProfile('${p.id}')" style="cursor:pointer;">${avatarEl(p,42)}</div>
-    <div style="flex:1;cursor:pointer;" onclick="openUserProfile('${p.id}')"><div style="font-weight:700;font-size:14px;">@${esc(p.username)}</div></div>
-    <button class="btn btn-sm btn-danger" onclick="unfollowUser('${p.id}','${esc(p.username)}')">Smetti</button>
-  </div>`).join("")}</div>`;
+  const profiles=await q("profiles",`id=in.(${ids.join(",")})&select=*`)||[];
+  el.innerHTML=`<div class="card">${profiles.map(p=>`<div class="user-card"><div onclick="openUserProfile('${p.id}')" style="cursor:pointer;">${avatarEl(p,42)}</div><div style="flex:1;cursor:pointer;" onclick="openUserProfile('${p.id}')"><div style="font-weight:700;font-size:14px;">@${esc(p.username)}</div></div><button class="btn btn-sm btn-danger" onclick="unfollowUser('${p.id}','${esc(p.username)}')">Smetti</button></div>`).join("")}</div>`;
 }
 
 function renderFindUsers(el){
   el.innerHTML=`<input type="search" id="user-search-input" placeholder="◎ Cerca per username..." style="margin-bottom:12px;"><div id="user-search-results"><div class="empty"><span class="empty-icon">◎</span>Cerca un utente per username</div></div>`;
-  setTimeout(()=>{const inp=document.getElementById("user-search-input");if(inp)inp.addEventListener("input",e=>searchUsers(e.target.value));},50);
+  setTimeout(()=>{const inp=document.getElementById("user-search-input");if(inp)inp.addEventListener("input",e=>searchUsers(e.target.value))},50);
 }
 
 async function searchUsers(v){
@@ -563,135 +481,73 @@ async function searchUsers(v){
   el.innerHTML=`<div class="empty">Ricerca in corso...</div>`;
   userSearchTimer=setTimeout(async()=>{
     try{
-      const results=await safeDbQ("profiles",`username=ilike.%25${encodeURIComponent(v)}%25&select=id,username,avatar_color&limit=10`);
-      const myFollows=await safeDbQ("follows",`follower_id=eq.${session.user.id}&select=following_id`);
+      const results=await q("profiles",`username=ilike.%25${encodeURIComponent(v)}%25&select=id,username,avatar_color&limit=10`)||[];
+      const myFollows=await q("follows",`follower_id=eq.${session.user.id}&select=following_id`)||[];
       const followingIds=myFollows.map(f=>f.following_id);
       const filtered=results.filter(p=>p.id!==session.user.id);
       if(!filtered.length){el.innerHTML=`<div class="empty">Nessun utente trovato per "${esc(v)}"</div>`;return}
-      el.innerHTML=`<div class="card">${filtered.map(p=>{
-        const isFollowing=followingIds.includes(p.id);
-        return `<div class="user-card">${avatarEl(p,42)}
-          <div style="flex:1;cursor:pointer;" onclick="openUserProfile('${p.id}')"><div style="font-weight:700;font-size:14px;">@${esc(p.username)}</div></div>
-          ${isFollowing?`<button class="btn btn-sm" style="color:var(--muted);" onclick="unfollowUser('${p.id}','${esc(p.username)}')">Seguito ✓</button>`:`<button class="btn btn-sm btn-primary" onclick="followUser('${p.id}','${esc(p.username)}')">+ Segui</button>`}
-        </div>`;
-      }).join("")}</div>`;
+      el.innerHTML=`<div class="card">${filtered.map(p=>{const isF=followingIds.includes(p.id);return `<div class="user-card">${avatarEl(p,42)}<div style="flex:1;cursor:pointer;" onclick="openUserProfile('${p.id}')"><div style="font-weight:700;font-size:14px;">@${esc(p.username)}</div></div>${isF?`<button class="btn btn-sm" style="color:var(--muted);" onclick="unfollowUser('${p.id}','${esc(p.username)}')">Seguito ✓</button>`:`<button class="btn btn-sm btn-primary" onclick="followUser('${p.id}','${esc(p.username)}')">+ Segui</button>`}</div>`}).join("")}</div>`;
     }catch(e){el.innerHTML=`<div class="empty" style="font-size:12px;word-break:break-all;">Errore: ${esc(e.message)}</div>`}
   },400);
 }
 
-async function followUser(id,username){
-  try{await dbIns("follows",{follower_id:session.user.id,following_id:id});toast(`Ora segui @${username}`);searchUsers(document.getElementById("user-search-input")?.value||"")}catch(e){toast("Errore: "+e.message)}
-}
-async function unfollowUser(id,username){
-  try{await dbDel("follows",`follower_id=eq.${session.user.id}&following_id=eq.${id}`);toast(`Smesso di seguire @${username}`);updateSocial()}catch(e){toast("Errore: "+e.message)}
-}
+async function followUser(id,username){try{await ins("follows",{follower_id:session.user.id,following_id:id});toast(`Ora segui @${username}`);searchUsers(document.getElementById("user-search-input")?.value||"")}catch(e){toast("Errore: "+e.message)}}
+async function unfollowUser(id,username){try{await del("follows",`follower_id=eq.${session.user.id}&following_id=eq.${id}`);toast(`Smesso di seguire @${username}`);updateSocial()}catch(e){toast("Errore: "+e.message)}}
 
 async function renderRecs(el){
   pendingRecs=0;document.getElementById("social-dot").style.display="none";
-  const recs=await safeDbQ("recommendations",`to_id=eq.${session.user.id}&select=*&order=created_at.desc`);
+  const recs=await q("recommendations",`to_id=eq.${session.user.id}&select=*&order=created_at.desc`)||[];
   if(!recs.length){el.innerHTML=`<div class="empty"><span class="empty-icon">⊞</span>Nessun consiglio ricevuto</div>`;return}
   const sids=[...new Set(recs.map(r=>r.from_id))];
-  const profiles=await safeDbQ("profiles",`id=in.(${sids.join(",")})&select=*`);
+  const profiles=await q("profiles",`id=in.(${sids.join(",")})&select=*`)||[];
   const pm={};profiles.forEach(p=>pm[p.id]=p);
-  el.innerHTML=recs.map(r=>{
-    const p=pm[r.from_id]||{username:"?",avatar_color:"#c0392b"};
-    const inLib=library.some(m=>m.title===r.manga_title);
-    return `<div class="card">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">${avatarEl(p,34)}
-        <div style="flex:1;"><div style="font-size:12px;color:var(--muted);">Consigliato da</div><div style="font-weight:700;font-size:14px;">@${esc(p.username)}</div></div>
-        <div style="font-size:11px;color:var(--dim);">${timeAgo(r.created_at)}</div>
-      </div>
-      <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;">
-        ${r.manga_cover?`<img src="${esc(r.manga_cover)}" style="width:44px;height:62px;border-radius:6px;object-fit:cover;" onerror="this.style.display='none'">`:""}
-        <div style="flex:1;"><div style="font-weight:800;font-size:14px;">${esc(r.manga_title)}</div>
-        ${r.message?`<div style="font-size:13px;color:var(--muted);margin-top:4px;font-style:italic;">"${esc(r.message)}"</div>`:""}</div>
-      </div>
-      <div style="display:flex;gap:8px;">
-        ${inLib?`<span style="font-size:12px;color:var(--muted);padding:8px 0;">✓ Già in libreria</span>`:`<button class="btn btn-primary btn-sm" onclick="addRecToLib('${esc(r.manga_title)}','${esc(r.manga_cover||"")}','${r.id}')">+ Aggiungi</button>`}
-        <button class="btn btn-sm btn-danger" onclick="dismissRec('${r.id}')">Ignora</button>
-      </div>
-    </div>`;
-  }).join("");
+  el.innerHTML=recs.map(r=>{const p=pm[r.from_id]||{username:"?",avatar_color:"#c0392b"};const inLib=library.some(m=>m.title===r.manga_title);return `<div class="card"><div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">${avatarEl(p,34)}<div style="flex:1;"><div style="font-size:12px;color:var(--muted);">Consigliato da</div><div style="font-weight:700;font-size:14px;">@${esc(p.username)}</div></div><div style="font-size:11px;color:var(--dim);">${timeAgo(r.created_at)}</div></div><div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;">${r.manga_cover?`<img src="${esc(r.manga_cover)}" style="width:44px;height:62px;border-radius:6px;object-fit:cover;" onerror="this.style.display='none'">`:""}<div style="flex:1;"><div style="font-weight:800;font-size:14px;">${esc(r.manga_title)}</div>${r.message?`<div style="font-size:13px;color:var(--muted);margin-top:4px;font-style:italic;">"${esc(r.message)}"</div>`:""}</div></div><div style="display:flex;gap:8px;">${inLib?`<span style="font-size:12px;color:var(--muted);padding:8px 0;">✓ Già in libreria</span>`:`<button class="btn btn-primary btn-sm" onclick="addRecToLib('${esc(r.manga_title)}','${esc(r.manga_cover||"")}','${r.id}')">+ Aggiungi</button>`}<button class="btn btn-sm btn-danger" onclick="dismissRec('${r.id}')">Ignora</button></div></div>`}).join("");
 }
-
-async function addRecToLib(title,cover,recId){
-  const manga={title,status:"Da leggere",chapters:0,total_chapters:null,score:0,genre:"Action",cover:cover||null,favourite:false,review:""};
-  try{const res=await dbIns("library",{...manga,user_id:session.user.id});library.unshift(res[0]||{...manga,id:Date.now()});await dbDel("recommendations",`id=eq.${recId}`).catch(()=>{});toast(`"${title}" aggiunto!`);updateSocial()}catch(e){toast("Errore: "+e.message)}
-}
-async function dismissRec(id){await dbDel("recommendations",`id=eq.${id}`).catch(()=>{});updateSocial()}
+async function addRecToLib(title,cover,recId){try{const res=await ins("library",{title,status:"Da leggere",chapters:0,total_chapters:null,score:0,genre:"Action",cover:cover||null,favourite:false,review:"",user_id:session.user.id});library.unshift(res[0]||{title,id:Date.now()});await del("recommendations",`id=eq.${recId}`).catch(()=>{});toast(`"${title}" aggiunto!`);updateSocial()}catch(e){toast("Errore: "+e.message)}}
+async function dismissRec(id){await del("recommendations",`id=eq.${id}`).catch(()=>{});updateSocial()}
 
 async function openUserProfile(userId){
   try{
-    const profiles=await safeDbQ("profiles",`id=eq.${userId}&select=*`);
+    const profiles=await q("profiles",`id=eq.${userId}&select=*`)||[];
     const profile=profiles[0];if(!profile)return;
-    const theirLib=await safeDbQ("library",`user_id=eq.${userId}&select=*`);
-    const follows=await safeDbQ("follows",`follower_id=eq.${session.user.id}&following_id=eq.${userId}&select=id`);
-    const followerRows=await safeDbQ("follows",`following_id=eq.${userId}&select=id`);
+    const theirLib=await q("library",`user_id=eq.${userId}&select=*`)||[];
+    const follows=await q("follows",`follower_id=eq.${session.user.id}&following_id=eq.${userId}&select=id`)||[];
+    const followerRows=await q("follows",`following_id=eq.${userId}&select=id`)||[];
     viewingUser={profile,library:theirLib,isFollowing:follows.length>0};
     pushView(`@${profile.username}`,()=>renderUserProfileHTML(userId,profile,theirLib,followerRows.length));
   }catch(e){toast("Errore: "+e.message)}
 }
-
 function renderUserProfileHTML(userId,profile,theirLib,followerCount){
   const tot=theirLib.length,chaps=theirLib.reduce((a,m)=>a+(parseInt(m.chapters)||0),0);
   const sc=theirLib.filter(m=>m.score>0),avg=sc.length?(sc.reduce((a,m)=>a+m.score,0)/sc.length).toFixed(1):"—";
   const isFollowing=viewingUser?.isFollowing||false,isSelf=userId===session.user.id;
   const color=profile?.avatar_color||"#c0392b",initials=(profile?.username||"?")[0].toUpperCase();
-  let h=`<div style="margin:-14px -14px 16px;background:linear-gradient(160deg,${color}44 0%,${color}11 60%,transparent 100%);border-bottom:1px solid ${color}33;padding:20px 16px 16px;">
-    <div style="display:flex;align-items:center;gap:14px;">
-      <div class="avatar" style="width:68px;height:68px;font-size:26px;background:${color};box-shadow:0 0 0 3px ${color}66;">${initials}</div>
-      <div style="flex:1;"><div style="font-weight:900;font-size:20px;">@${esc(profile.username)}</div><div style="font-size:12px;color:${color};margin-top:2px;font-weight:600;">${followerCount} follower · ${tot} manga</div></div>
-    </div>
-    ${!isSelf?`<div style="display:flex;gap:8px;margin-top:14px;">
-      ${isFollowing?`<button class="btn btn-block" onclick="toggleFollow('${userId}','${esc(profile.username)}',false)" style="color:var(--muted);flex:2;">Seguito ✓</button>`:`<button class="btn btn-primary btn-block" onclick="toggleFollow('${userId}','${esc(profile.username)}',true)" style="flex:2;">+ Segui</button>`}
-      <button class="btn" style="flex:1;border-color:${color}55;color:${color};" onclick="openRecModal('${userId}','${esc(profile.username)}')">◧ Consiglia</button>
-    </div>`:""}
-  </div>
-  <div class="stat-grid">${[["Manga",tot],["Capitoli",chaps.toLocaleString()],["Voto medio",avg],["Completati",theirLib.filter(m=>m.status==="Completati").length]].map(([l,v])=>`<div class="stat-card"><div class="stat-label">${l}</div><div class="stat-val" style="color:${color};">${v}</div></div>`).join("")}</div>`;
-  if(!isSelf&&library.length&&theirLib.length){
-    const myT=new Set(library.map(m=>m.title));
-    const common=theirLib.filter(m=>myT.has(m.title));
-    if(common.length){h+=`<div class="card"><div class="section-label">📚 In comune (${common.length})</div>`;common.slice(0,5).forEach(m=>{const mine=library.find(x=>x.title===m.title);h+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">${coverImg(m,34)}<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(m.title)}</div><div style="font-size:11px;color:var(--muted);">Tu: ${mine?.score>0?`★${mine.score}`:"—"} · @${esc(profile.username)}: ${m.score>0?`★${m.score}`:"—"}</div></div></div>`});h+=`</div>`}
-  }
+  let h=`<div style="margin:-14px -14px 16px;background:linear-gradient(160deg,${color}44 0%,${color}11 60%,transparent 100%);border-bottom:1px solid ${color}33;padding:20px 16px 16px;"><div style="display:flex;align-items:center;gap:14px;"><div class="avatar" style="width:68px;height:68px;font-size:26px;background:${color};box-shadow:0 0 0 3px ${color}66;">${initials}</div><div style="flex:1;"><div style="font-weight:900;font-size:20px;">@${esc(profile.username)}</div><div style="font-size:12px;color:${color};margin-top:2px;font-weight:600;">${followerCount} follower · ${tot} manga</div></div></div>${!isSelf?`<div style="display:flex;gap:8px;margin-top:14px;">${isFollowing?`<button class="btn btn-block" onclick="toggleFollow('${userId}','${esc(profile.username)}',false)" style="color:var(--muted);flex:2;">Seguito ✓</button>`:`<button class="btn btn-primary btn-block" onclick="toggleFollow('${userId}','${esc(profile.username)}',true)" style="flex:2;">+ Segui</button>`}<button class="btn" style="flex:1;border-color:${color}55;color:${color};" onclick="openRecModal('${userId}','${esc(profile.username)}')">◧ Consiglia</button></div>`:""}</div>`;
+  h+=`<div class="stat-grid">${[["Manga",tot],["Capitoli",chaps.toLocaleString()],["Voto medio",avg],["Completati",theirLib.filter(m=>m.status==="Completati").length]].map(([l,v])=>`<div class="stat-card"><div class="stat-label">${l}</div><div class="stat-val" style="color:${color};">${v}</div></div>`).join("")}</div>`;
+  if(!isSelf&&library.length&&theirLib.length){const myT=new Set(library.map(m=>m.title));const common=theirLib.filter(m=>myT.has(m.title));if(common.length){h+=`<div class="card"><div class="section-label">In comune (${common.length})</div>`;common.slice(0,5).forEach(m=>{const mine=library.find(x=>x.title===m.title);h+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">${coverImg(m,34)}<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(m.title)}</div><div style="font-size:11px;color:var(--muted);">Tu: ${mine?.score>0?`★${mine.score}`:"—"} · @${esc(profile.username)}: ${m.score>0?`★${m.score}`:"—"}</div></div></div>`});h+=`</div>`}}
   h+=`<div class="card"><div class="section-label">Libreria di @${esc(profile.username)}</div>`;
   if(!theirLib.length)h+=`<div style="color:var(--muted);font-size:13px;padding:10px 0;">Libreria vuota</div>`;
   else theirLib.slice(0,20).forEach(m=>{h+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">${coverImg(m,38)}<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(m.title)}</div><div style="display:flex;gap:6px;margin-top:3px;">${bdg(m.status,true)}${m.score>0?starEl(m.score):""}</div></div>${!isSelf?`<button class="btn btn-sm" onclick="openRecModalManga('${userId}','${esc(profile.username)}','${esc(m.title)}','${esc(m.cover||"")}')" style="font-size:12px;padding:6px 10px;">◧</button>`:""}</div>`});
   h+=`</div>`;return h;
 }
-
 async function toggleFollow(userId,username,follow){
-  if(follow){await followUser(userId,username)}else{await unfollowUser(userId,username)}
-  if(viewingUser){viewingUser.isFollowing=follow}
+  if(follow)await followUser(userId,username);else await unfollowUser(userId,username);
+  if(viewingUser)viewingUser.isFollowing=follow;
   const profile=viewingUser?.profile,theirLib=viewingUser?.library||[];
-  const followerRows=await safeDbQ("follows",`following_id=eq.${userId}&select=id`).catch(()=>[]);
-  document.getElementById("content").innerHTML=`<div class="fade-in">${renderUserProfileHTML(userId,profile,theirLib,followerRows.length)}</div>`;
+  const fr=await q("follows",`following_id=eq.${userId}&select=id`).catch(()=>[]);
+  document.getElementById("content").innerHTML=`<div class="fade-in">${renderUserProfileHTML(userId,profile,theirLib,(fr||[]).length)}</div>`;
 }
-
 function openRecModal(userId,username){
   recTarget={id:userId,username};recManga=null;
   document.getElementById("rec-title").textContent=`Consiglia a @${username}`;
   document.getElementById("rec-sub").textContent="Scegli un manga dalla tua libreria";
   document.getElementById("rec-msg").value="";
-  const picker=document.getElementById("rec-picker");
-  picker.innerHTML=library.slice(0,30).map(m=>`<div onclick="selectRecManga('${esc(m.title)}','${esc(m.cover||"")}',this)" style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:10px;cursor:pointer;" class="rec-manga-item">${coverImg(m,32)}<span style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(m.title)}</span></div>`).join("");
+  document.getElementById("rec-picker").innerHTML=library.slice(0,30).map(m=>`<div onclick="selectRecManga('${esc(m.title)}','${esc(m.cover||"")}',this)" style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:10px;cursor:pointer;" class="rec-manga-item">${coverImg(m,32)}<span style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(m.title)}</span></div>`).join("");
   document.getElementById("rec-modal").style.display="flex";
 }
-function openRecModalManga(userId,username,title,cover){
-  recTarget={id:userId,username};recManga={title,cover};
-  document.getElementById("rec-title").textContent=`Consiglia a @${username}`;
-  document.getElementById("rec-sub").textContent=title;
-  document.getElementById("rec-msg").value="";
-  document.getElementById("rec-picker").innerHTML="";
-  document.getElementById("rec-modal").style.display="flex";
-}
-function selectRecManga(title,cover,el){
-  recManga={title,cover};document.getElementById("rec-sub").textContent=title;
-  document.querySelectorAll(".rec-manga-item").forEach(e=>e.style.background="");el.style.background="var(--redd)";
-}
-async function sendRecommendation(){
-  if(!recTarget||!recManga){toast("Seleziona un manga!");return}
-  try{await dbIns("recommendations",{from_id:session.user.id,to_id:recTarget.id,manga_title:recManga.title,manga_cover:recManga.cover||null,message:document.getElementById("rec-msg").value.trim()});toast(`Consiglio inviato a @${recTarget.username}!`);closeRecModal()}catch(e){toast("Errore: "+e.message)}
-}
+function openRecModalManga(userId,username,title,cover){recTarget={id:userId,username};recManga={title,cover};document.getElementById("rec-title").textContent=`Consiglia a @${username}`;document.getElementById("rec-sub").textContent=title;document.getElementById("rec-msg").value="";document.getElementById("rec-picker").innerHTML="";document.getElementById("rec-modal").style.display="flex"}
+function selectRecManga(title,cover,el){recManga={title,cover};document.getElementById("rec-sub").textContent=title;document.querySelectorAll(".rec-manga-item").forEach(e=>e.style.background="");el.style.background="var(--redd)"}
+async function sendRecommendation(){if(!recTarget||!recManga){toast("Seleziona un manga!");return}try{await ins("recommendations",{from_id:session.user.id,to_id:recTarget.id,manga_title:recManga.title,manga_cover:recManga.cover||null,message:document.getElementById("rec-msg").value.trim()});toast(`Consiglio inviato a @${recTarget.username}!`);closeRecModal()}catch(e){toast("Errore: "+e.message)}}
 function closeRecModal(){document.getElementById("rec-modal").style.display="none";recTarget=null;recManga=null}
 
 function renderStats(){
@@ -706,58 +562,32 @@ function renderStats(){
   if(byGenre.length)h+=donutCard("Generi più letti",byGenre);
   return h;
 }
-function donutCard(title,data){
-  const tot=data.reduce((a,d)=>a+d.val,0);if(!tot)return"";
-  const size=120,r=40,cx=60,cy=60;let off=0,paths="";
-  data.forEach(d=>{const p=d.val/tot,a1=off*2*Math.PI-Math.PI/2,a2=(off+p)*2*Math.PI-Math.PI/2;const x1=cx+r*Math.cos(a1),y1=cy+r*Math.sin(a1),x2=cx+r*Math.cos(a2),y2=cy+r*Math.sin(a2);paths+=`<path d="M${cx} ${cy} L${x1.toFixed(2)} ${y1.toFixed(2)} A${r} ${r} 0 ${p>.5?1:0} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z" fill="${d.color}" opacity=".85"/>`;off+=p});
-  return `<div class="card"><div class="section-label">${title}</div><div style="display:flex;align-items:center;gap:16px;"><svg width="${size}" height="${size}" style="flex-shrink:0;">${paths}<circle cx="${cx}" cy="${cy}" r="22" fill="var(--card)"/><text x="${cx}" y="${cy+5}" text-anchor="middle" fill="var(--text)" font-size="14" font-weight="700">${tot}</text></svg><div style="flex:1;">${data.map(d=>`<div class="legend-row"><div class="legend-dot" style="background:${d.color}"></div><span style="font-size:11px;flex:1;">${esc(d.label)}</span><span style="font-size:12px;font-weight:700;color:${d.color};">${d.val}</span></div>`).join("")}</div></div></div>`;
-}
+function donutCard(title,data){const tot=data.reduce((a,d)=>a+d.val,0);if(!tot)return"";const size=120,r=40,cx=60,cy=60;let off=0,paths="";data.forEach(d=>{const p=d.val/tot,a1=off*2*Math.PI-Math.PI/2,a2=(off+p)*2*Math.PI-Math.PI/2;const x1=cx+r*Math.cos(a1),y1=cy+r*Math.sin(a1),x2=cx+r*Math.cos(a2),y2=cy+r*Math.sin(a2);paths+=`<path d="M${cx} ${cy} L${x1.toFixed(2)} ${y1.toFixed(2)} A${r} ${r} 0 ${p>.5?1:0} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z" fill="${d.color}" opacity=".85"/>`;off+=p});return `<div class="card"><div class="section-label">${title}</div><div style="display:flex;align-items:center;gap:16px;"><svg width="${size}" height="${size}" style="flex-shrink:0;">${paths}<circle cx="${cx}" cy="${cy}" r="22" fill="var(--card)"/><text x="${cx}" y="${cy+5}" text-anchor="middle" fill="var(--text)" font-size="14" font-weight="700">${tot}</text></svg><div style="flex:1;">${data.map(d=>`<div class="legend-row"><div class="legend-dot" style="background:${d.color}"></div><span style="font-size:11px;flex:1;">${esc(d.label)}</span><span style="font-size:12px;font-weight:700;color:${d.color};">${d.val}</span></div>`).join("")}</div></div></div>`}
 
 function renderSettings(){
   const email=session?.user?.email||"";
   const colorOptions=["#c0392b","#a93226","#922b21","#7b241c","#e74c3c","#cd6155"];
   return `<div style="font-weight:800;font-size:18px;margin-bottom:14px;color:var(--red);">Impostazioni</div>
-  <div class="card">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">${avatarEl(myProfile,52)}<div><div style="font-weight:800;font-size:16px;">@${esc(myProfile?.username||"")}</div><div style="font-size:12px;color:var(--muted);">${esc(email)}</div></div></div>
-    <div class="section-label">Colore avatar</div>
-    <div style="display:flex;gap:10px;margin-bottom:14px;">${colorOptions.map(c=>`<div onclick="changeAvatarColor('${c}')" style="width:32px;height:32px;border-radius:50%;background:${c};cursor:pointer;border:3px solid ${myProfile?.avatar_color===c?"#fff":"transparent"};transition:border .2s;"></div>`).join("")}</div>
-    <button class="btn btn-danger btn-block" onclick="doLogout()">Esci dall'account</button>
-  </div>
+  <div class="card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">${avatarEl(myProfile,52)}<div><div style="font-weight:800;font-size:16px;">@${esc(myProfile?.username||"")}</div><div style="font-size:12px;color:var(--muted);">${esc(email)}</div></div></div>
+  <div class="section-label">Colore avatar</div><div style="display:flex;gap:10px;margin-bottom:14px;">${colorOptions.map(c=>`<div onclick="changeAvatarColor('${c}')" style="width:32px;height:32px;border-radius:50%;background:${c};cursor:pointer;border:3px solid ${myProfile?.avatar_color===c?"#fff":"transparent"};transition:border .2s;"></div>`).join("")}</div>
+  <button class="btn btn-danger btn-block" onclick="doLogout()">Esci dall'account</button></div>
   <div class="card"><div style="font-weight:700;font-size:14px;margin-bottom:4px;">Esporta libreria</div><div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Scarica un backup in JSON</div><button class="btn btn-primary" onclick="exportLib()">⬇ Esporta JSON</button></div>
   <div class="card"><div style="font-size:12px;color:var(--muted);">MangaTrack v3.0 · Social · Jikan API v4 · Supabase</div></div>`;
 }
-async function changeAvatarColor(color){
-  try{await dbUpd("profiles",`id=eq.${session.user.id}`,{avatar_color:color});myProfile.avatar_color=color;updateHeaderAvatar();render();toast("Colore aggiornato!")}catch(e){toast("Errore: "+e.message)}
-}
-async function doLogout(){await authSignOut();library=[];myProfile=null;document.getElementById("app").style.display="none";document.getElementById("auth-screen").style.display="flex"}
+async function changeAvatarColor(color){try{await upd("profiles",`id=eq.${session.user.id}`,{avatar_color:color});myProfile.avatar_color=color;updateHeaderAvatar();render();toast("Colore aggiornato!")}catch(e){toast("Errore: "+e.message)}}
+async function doLogout(){await signOut();library=[];myProfile=null;document.getElementById("app").style.display="none";document.getElementById("auth-screen").style.display="flex"}
 function exportLib(){const a=document.createElement("a");a.href="data:application/json;charset=utf-8,"+encodeURIComponent(JSON.stringify({library,exported:new Date().toISOString()},null,2));a.download="mangatrack_backup.json";a.click()}
 
 function renderDetailHTML(){
   const m=detail;if(!m)return"";
-  const statusBtns=`<div class="status-grid">${STATUS.map(s=>{const c=SC[s],active=m.status===s,meta=STATUS_META[s];return `<button class="status-btn" onclick="setDF('status','${s}');refreshDetail()" style="background:${active?c+"33":c+"0d"};color:${active?c:"var(--muted)"};border-color:${active?c:c+"33"};"><span class="status-btn-icon">${meta.icon}</span><span class="status-btn-label">${s}</span><span class="status-btn-desc">${meta.desc}</span></button>`}).join("")}</div>`;
+  const statusBtns=`<div class="status-grid">${STATUS.map(s=>{const c=SC[s],active=m.status===s,meta=SM[s];return `<button class="status-btn" onclick="setDF('status','${s}');refreshDetail()" style="background:${active?c+"33":c+"0d"};color:${active?c:"var(--muted)"};border-color:${active?c:c+"33"};"><span class="status-btn-icon">${meta.icon}</span><span class="status-btn-label">${s}</span><span class="status-btn-desc">${meta.desc}</span></button>`}).join("")}</div>`;
   return `<div style="display:flex;gap:14px;margin-bottom:16px;">${coverImg(m,84)}<div style="flex:1;"><div style="font-weight:800;font-size:16px;margin-bottom:6px;line-height:1.3;">${esc(m.title)}</div><div style="margin-bottom:6px;">${bdg(m.status)}</div><div style="font-size:12px;color:var(--muted);">${esc(m.genre||"")}</div></div></div>
   <div class="card"><div class="section-label">Stato lettura</div>${statusBtns}</div>
-  <div class="card"><div class="section-label">Progresso</div>
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:${m.total_chapters?"10px":"0"};">
-      <span style="font-size:13px;color:var(--muted);flex-shrink:0;">Capitoli letti</span>
-      <input type="number" min="0" id="d-ch" value="${m.chapters}" onchange="setDF('chapters',parseInt(this.value)||0)" style="width:80px;text-align:center;">
-      ${m.total_chapters?`<span style="color:var(--muted);font-size:13px;">/ ${m.total_chapters}</span>`:""}
-    </div>
-    ${m.total_chapters?`<div class="prog-bg"><div class="prog-fill" id="d-prog" style="width:${pct(m)}%;"></div></div>`:""}
-  </div>
-  <div class="card"><div class="section-label">Voto</div>
-    <div style="display:flex;align-items:center;gap:12px;">
-      <span id="d-sv" style="font-size:24px;color:#f1c40f;font-weight:900;min-width:30px;">${m.score||"—"}</span>
-      <input type="range" min="0" max="10" step="1" id="d-score" value="${m.score}" oninput="setDF('score',parseInt(this.value));document.getElementById('d-sv').textContent=this.value||'—'">
-      <span style="color:var(--muted);font-size:12px;">/10</span>
-    </div>
-  </div>
+  <div class="card"><div class="section-label">Progresso</div><div style="display:flex;align-items:center;gap:10px;margin-bottom:${m.total_chapters?"10px":"0"};"><span style="font-size:13px;color:var(--muted);flex-shrink:0;">Capitoli letti</span><input type="number" min="0" id="d-ch" value="${m.chapters}" onchange="setDF('chapters',parseInt(this.value)||0)" style="width:80px;text-align:center;">${m.total_chapters?`<span style="color:var(--muted);font-size:13px;">/ ${m.total_chapters}</span>`:""}</div>${m.total_chapters?`<div class="prog-bg"><div class="prog-fill" id="d-prog" style="width:${pct(m)}%;"></div></div>`:""}</div>
+  <div class="card"><div class="section-label">Voto</div><div style="display:flex;align-items:center;gap:12px;"><span id="d-sv" style="font-size:24px;color:#f1c40f;font-weight:900;min-width:30px;">${m.score||"—"}</span><input type="range" min="0" max="10" step="1" id="d-score" value="${m.score}" oninput="setDF('score',parseInt(this.value));document.getElementById('d-sv').textContent=this.value||'—'"><span style="color:var(--muted);font-size:12px;">/10</span></div></div>
   <div class="card"><div class="section-label">Recensione</div><textarea id="d-rev" rows="3" placeholder="Scrivi qualcosa..." onchange="setDF('review',this.value)">${esc(m.review||"")}</textarea></div>
   <div style="margin-bottom:10px;"><button class="btn${m.favourite?" btn-primary":""} btn-block" onclick="setDF('favourite',${!m.favourite});refreshDetail()">${m.favourite?"★ Preferito":"☆ Aggiungi ai preferiti"}</button></div>
-  <div style="display:flex;gap:10px;margin-bottom:20px;">
-    <button class="btn btn-primary" style="flex:2;" onclick="saveDetail()" id="save-btn">Salva</button>
-    <button class="btn btn-danger" style="flex:1;" onclick="deleteDetail()">Rimuovi</button>
-  </div>`;
+  <div style="display:flex;gap:10px;margin-bottom:20px;"><button class="btn btn-primary" style="flex:2;" onclick="saveDetail()" id="save-btn">Salva</button><button class="btn btn-danger" style="flex:1;" onclick="deleteDetail()">Rimuovi</button></div>`;
 }
 function refreshDetail(){document.getElementById("content").innerHTML=`<div class="fade-in">${renderDetailHTML()}</div>`}
 function setDF(k,v){detail[k]=v;if(k==="chapters"&&detail.total_chapters){const el=document.getElementById("d-prog");if(el)el.style.width=pct(detail)+"%"}}
@@ -765,18 +595,15 @@ async function saveDetail(){
   const btn=document.getElementById("save-btn");if(btn){btn.textContent="...";btn.disabled=true}
   try{
     const fields={status:detail.status,chapters:detail.chapters,score:detail.score,review:detail.review,favourite:detail.favourite};
-    await dbUpd("library",`id=eq.${detail.id}`,fields);
+    await upd("library",`id=eq.${detail.id}`,fields);
     const idx=library.findIndex(m=>m.id===detail.id);if(idx>-1)library[idx]={...library[idx],...fields};
     const actType=fields.status==="Completati"?"completed":fields.score>0?"scored":"status_changed";
-    const details=fields.score>0?`Voto: ${fields.score}/10`:`Stato: ${fields.status}`;
-    await dbIns("activity",{user_id:session.user.id,type:actType,manga_title:detail.title,manga_cover:detail.cover,details}).catch(()=>{});
+    await ins("activity",{user_id:session.user.id,type:actType,manga_title:detail.title,manga_cover:detail.cover,details:fields.score>0?`Voto: ${fields.score}/10`:`Stato: ${fields.status}`}).catch(()=>{});
     toast("Salvato!");
   }catch(e){toast("Errore: "+e.message)}
   if(btn){btn.textContent="Salva";btn.disabled=false}
 }
-async function deleteDetail(){
-  try{await dbDel("library",`id=eq.${detail.id}`);library=library.filter(m=>m.id!==detail.id);goBack();toast("Rimosso dalla libreria.")}catch(e){toast("Errore: "+e.message)}
-}
+async function deleteDetail(){try{await del("library",`id=eq.${detail.id}`);library=library.filter(m=>m.id!==detail.id);goBack();toast("Rimosso dalla libreria.")}catch(e){toast("Errore: "+e.message)}}
 
 init();
 </script>
