@@ -254,7 +254,7 @@ function updateHeaderAvatar(){
   document.getElementById("header-avatar").innerHTML=`<div onclick="switchTab('settings')" style="cursor:pointer;">${avatarEl(myProfile,34)}</div>`;
 }
 async function loadLibrary(){
-  try{library=await q("library","select=*&order=created_at.desc")||[]}catch{library=[]}
+  try{library=await q("library",`user_id=eq.${session.user.id}&select=*&order=created_at.desc`)||[]}catch{library=[]}
   render();
 }
 async function checkPendingRecs(){
