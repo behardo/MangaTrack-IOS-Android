@@ -216,6 +216,7 @@ let searchQ="",searchResults=[],searching=false,searchTimer=null;
 let socialTab="feed",viewingUser=null;
 let previewManga=null,recTarget=null,recManga=null;
 let pendingRecs=0,userSearchTimer=null,installTab="ios";
+let uploadingAvatar=false;
 
 async function init(){
   const hash=location.hash;
@@ -250,7 +251,7 @@ function showAuth(){document.getElementById("auth-screen").style.display="flex";
 function showApp(){document.getElementById("auth-screen").style.display="none";document.getElementById("username-screen").style.display="none";document.getElementById("app").style.display="flex"}
 function updateHeaderAvatar(){
   if(!myProfile)return;
-  document.getElementById("header-avatar").innerHTML=`<div class="avatar" style="width:34px;height:34px;font-size:14px;background:${myProfile.avatar_color};cursor:pointer;box-shadow:0 0 0 2px ${myProfile.avatar_color}55;" onclick="switchTab('settings')">${myProfile.username[0].toUpperCase()}</div>`;
+  document.getElementById("header-avatar").innerHTML=`<div onclick="switchTab('settings')" style="cursor:pointer;">${avatarEl(myProfile,34)}</div>`;
 }
 async function loadLibrary(){
   try{library=await q("library","select=*&order=created_at.desc")||[]}catch{library=[]}
@@ -356,7 +357,14 @@ function bdg(s,sm=false){const c=SC[s]||"#888";return `<span class="badge${sm?" 
 function starEl(sc){const c=sc>=8?"#f1c40f":sc>=6?"#e67e22":"#888";return `<span style="font-size:12px;font-weight:700;color:${c};">★ ${sc}/10</span>`}
 function pct(m){return m.total_chapters?Math.min(100,Math.round((m.chapters/m.total_chapters)*100)):0}
 function timeAgo(ts){const s=Math.floor((Date.now()-new Date(ts))/1000);if(s<60)return"ora";if(s<3600)return Math.floor(s/60)+"m fa";if(s<86400)return Math.floor(s/3600)+"h fa";return Math.floor(s/86400)+"g fa"}
-function avatarEl(profile,size=36){const i=(profile?.username||"?")[0].toUpperCase(),c=profile?.avatar_color||"#c0392b";return `<div class="avatar" style="width:${size}px;height:${size}px;font-size:${Math.round(size*.38)}px;background:${c};box-shadow:0 0 0 2px ${c}55;">${i}</div>`}
+function avatarEl(profile,size=36){
+  const c=profile?.avatar_color||"#c0392b";
+  if(profile?.avatar_url){
+    return `<img src="${esc(profile.avatar_url)}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;flex-shrink:0;box-shadow:0 0 0 2px ${c}55;" onerror="this.outerHTML='${`<div class=\\"avatar\\" style=\\"width:${size}px;height:${size}px;font-size:${Math.round(size*.38)}px;background:${c};box-shadow:0 0 0 2px ${c}55;\\">${(profile?.username||"?")[0].toUpperCase()}</div>`}'">`;
+  }
+  const i=(profile?.username||"?")[0].toUpperCase();
+  return `<div class="avatar" style="width:${size}px;height:${size}px;font-size:${Math.round(size*.38)}px;background:${c};box-shadow:0 0 0 2px ${c}55;">${i}</div>`;
+}
 
 function render(){
   if(detail){document.getElementById("content").innerHTML=`<div class="fade-in">${renderDetailHTML()}</div>`;return}
@@ -564,13 +572,29 @@ function renderStats(){
 }
 function donutCard(title,data){const tot=data.reduce((a,d)=>a+d.val,0);if(!tot)return"";const size=120,r=40,cx=60,cy=60;let off=0,paths="";data.forEach(d=>{const p=d.val/tot,a1=off*2*Math.PI-Math.PI/2,a2=(off+p)*2*Math.PI-Math.PI/2;const x1=cx+r*Math.cos(a1),y1=cy+r*Math.sin(a1),x2=cx+r*Math.cos(a2),y2=cy+r*Math.sin(a2);paths+=`<path d="M${cx} ${cy} L${x1.toFixed(2)} ${y1.toFixed(2)} A${r} ${r} 0 ${p>.5?1:0} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z" fill="${d.color}" opacity=".85"/>`;off+=p});return `<div class="card"><div class="section-label">${title}</div><div style="display:flex;align-items:center;gap:16px;"><svg width="${size}" height="${size}" style="flex-shrink:0;">${paths}<circle cx="${cx}" cy="${cy}" r="22" fill="var(--card)"/><text x="${cx}" y="${cy+5}" text-anchor="middle" fill="var(--text)" font-size="14" font-weight="700">${tot}</text></svg><div style="flex:1;">${data.map(d=>`<div class="legend-row"><div class="legend-dot" style="background:${d.color}"></div><span style="font-size:11px;flex:1;">${esc(d.label)}</span><span style="font-size:12px;font-weight:700;color:${d.color};">${d.val}</span></div>`).join("")}</div></div></div>`}
 
+async function changeAvatarColor(color){try{await upd("profiles",`id=eq.${session.user.id}`,{avatar_color:color});myProfile.avatar_color=color;updateHeaderAvatar();render();toast("Colore aggiornato!")}catch(e){toast("Errore: "+e.message)}}
+
 function renderSettings(){
   const email=session?.user?.email||"";
   const colorOptions=["#c0392b","#a93226","#922b21","#7b241c","#e74c3c","#cd6155"];
   return `<div style="font-weight:800;font-size:18px;margin-bottom:14px;color:var(--red);">Impostazioni</div>
-  <div class="card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">${avatarEl(myProfile,52)}<div><div style="font-weight:800;font-size:16px;">@${esc(myProfile?.username||"")}</div><div style="font-size:12px;color:var(--muted);">${esc(email)}</div></div></div>
-  <div class="section-label">Colore avatar</div><div style="display:flex;gap:10px;margin-bottom:14px;">${colorOptions.map(c=>`<div onclick="changeAvatarColor('${c}')" style="width:32px;height:32px;border-radius:50%;background:${c};cursor:pointer;border:3px solid ${myProfile?.avatar_color===c?"#fff":"transparent"};transition:border .2s;"></div>`).join("")}</div>
-  <button class="btn btn-danger btn-block" onclick="doLogout()">Esci dall'account</button></div>
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+      <div style="position:relative;">
+        ${avatarEl(myProfile,64)}
+        <label for="avatar-upload" style="position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;background:var(--red);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;box-shadow:0 1px 4px #0006;">✎</label>
+        <input type="file" id="avatar-upload" accept="image/*" style="display:none;" onchange="uploadAvatar(this.files[0])">
+      </div>
+      <div style="flex:1;">
+        <div style="font-weight:800;font-size:16px;">@${esc(myProfile?.username||"")}</div>
+        <div style="font-size:12px;color:var(--muted);">${esc(email)}</div>
+        ${myProfile?.avatar_url?`<button onclick="removeAvatar()" style="font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;margin-top:3px;padding:0;">Rimuovi foto</button>`:`<div style="font-size:11px;color:var(--muted);margin-top:3px;">Tocca ✎ per aggiungere una foto</div>`}
+      </div>
+    </div>
+    <div class="section-label">Colore avatar</div>
+    <div style="display:flex;gap:10px;margin-bottom:14px;">${colorOptions.map(c=>`<div onclick="changeAvatarColor('${c}')" style="width:32px;height:32px;border-radius:50%;background:${c};cursor:pointer;border:3px solid ${myProfile?.avatar_color===c?"#fff":"transparent"};transition:border .2s;"></div>`).join("")}</div>
+    <button class="btn btn-danger btn-block" onclick="doLogout()">Esci dall'account</button>
+  </div>
 
   <div class="card">
     <div class="section-label">Installa l'app</div>
@@ -580,35 +604,49 @@ function renderSettings(){
     </div>
     ${installTab==='ios'?`
     <div style="display:flex;flex-direction:column;gap:12px;">
-      ${[
-        ["1","Apri questa pagina in","Safari","(non Chrome o Brave)"],
-        ["2","Tocca l'icona","Condividi","il quadrato con la freccia in basso"],
-        ["3","Scorri e tocca","Aggiungi a schermata Home",""],
-        ["4","Conferma toccando","Aggiungi","in alto a destra"],
-      ].map(([n,pre,bold,post])=>`<div style="display:flex;align-items:center;gap:12px;">
-        <div style="width:28px;height:28px;border-radius:50%;background:var(--red);color:#fff;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${n}</div>
-        <div style="font-size:13px;color:var(--text);">${pre} <strong style="color:var(--red);">${bold}</strong>${post?" — "+post:""}</div>
-      </div>`).join("")}
+      ${[["1","Apri questa pagina in","Safari","non Chrome o Brave"],["2","Tocca l'icona","Condividi","quadrato con freccia in basso"],["3","Scorri e tocca","Aggiungi a schermata Home",""],["4","Conferma toccando","Aggiungi","in alto a destra"]].map(([n,pre,bold,post])=>`<div style="display:flex;align-items:center;gap:12px;"><div style="width:28px;height:28px;border-radius:50%;background:var(--red);color:#fff;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${n}</div><div style="font-size:13px;">${pre} <strong style="color:var(--red);">${bold}</strong>${post?" — "+post:""}</div></div>`).join("")}
     </div>
-    <div style="margin-top:12px;background:var(--redd);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--muted);">⚠️ Su iPhone funziona solo con <strong style="color:var(--text);">Safari</strong>. Altri browser non supportano l'installazione PWA.</div>`:`
+    <div style="margin-top:12px;background:var(--redd);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--muted);">⚠️ Su iPhone funziona solo con <strong style="color:var(--text);">Safari</strong>.</div>`:`
     <div style="display:flex;flex-direction:column;gap:12px;">
-      ${[
-        ["1","Apri questa pagina in","Chrome","(o Edge, Brave)"],
-        ["2","Tocca i","tre puntini","in alto a destra ⋮"],
-        ["3","Tocca","Aggiungi a schermata Home","o 'Installa app'"],
-        ["4","Conferma toccando","Installa",""],
-      ].map(([n,pre,bold,post])=>`<div style="display:flex;align-items:center;gap:12px;">
-        <div style="width:28px;height:28px;border-radius:50%;background:var(--red);color:#fff;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${n}</div>
-        <div style="font-size:13px;color:var(--text);">${pre} <strong style="color:var(--red);">${bold}</strong>${post?" — "+post:""}</div>
-      </div>`).join("")}
+      ${[["1","Apri questa pagina in","Chrome","o Edge, Brave"],["2","Tocca i","tre puntini","in alto a destra ⋮"],["3","Tocca","Aggiungi a schermata Home","o 'Installa app'"],["4","Conferma toccando","Installa",""]].map(([n,pre,bold,post])=>`<div style="display:flex;align-items:center;gap:12px;"><div style="width:28px;height:28px;border-radius:50%;background:var(--red);color:#fff;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${n}</div><div style="font-size:13px;">${pre} <strong style="color:var(--red);">${bold}</strong>${post?" — "+post:""}</div></div>`).join("")}
     </div>
-    <div style="margin-top:12px;background:#1a2a1a;border-radius:10px;padding:10px 12px;font-size:12px;color:var(--muted);">✅ Su Android l'installazione è più completa e funziona con Chrome, Edge e Brave.</div>`}
+    <div style="margin-top:12px;background:#1a2a1a;border-radius:10px;padding:10px 12px;font-size:12px;color:var(--muted);">✅ Su Android funziona con Chrome, Edge e Brave.</div>`}
   </div>
 
   <div class="card"><div style="font-weight:700;font-size:14px;margin-bottom:4px;">Esporta libreria</div><div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Scarica un backup in JSON</div><button class="btn btn-primary" onclick="exportLib()">⬇ Esporta JSON</button></div>
   <div class="card"><div style="font-size:12px;color:var(--muted);">MangaTrack v3.0 · Social · Jikan API v4 · Supabase</div></div>`;
 }
-async function changeAvatarColor(color){try{await upd("profiles",`id=eq.${session.user.id}`,{avatar_color:color});myProfile.avatar_color=color;updateHeaderAvatar();render();toast("Colore aggiornato!")}catch(e){toast("Errore: "+e.message)}}
+async function uploadAvatar(file){
+  if(!file||uploadingAvatar)return;
+  if(file.size>2*1024*1024){toast("Foto troppo grande (max 2MB)");return}
+  uploadingAvatar=true;toast("Caricamento in corso...");
+  try{
+    const ext=file.name.split(".").pop().toLowerCase();
+    const path=`${session.user.id}/avatar.${ext}`;
+    // upload to supabase storage
+    const formData=new FormData();formData.append("",file);
+    const r=await fetch(`${SB}/storage/v1/object/avatars/${path}`,{
+      method:"POST",
+      headers:{"apikey":KEY,"Authorization":"Bearer "+session.access_token,"x-upsert":"true"},
+      body:file
+    });
+    if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.message||"Upload fallito")}
+    const avatar_url=`${SB}/storage/v1/object/public/avatars/${path}?t=${Date.now()}`;
+    await upd("profiles",`id=eq.${session.user.id}`,{avatar_url});
+    myProfile.avatar_url=avatar_url;
+    updateHeaderAvatar();render();
+    toast("Foto aggiornata!");
+  }catch(e){toast("Errore: "+e.message)}
+  uploadingAvatar=false;
+}
+
+async function removeAvatar(){
+  try{
+    await upd("profiles",`id=eq.${session.user.id}`,{avatar_url:null});
+    myProfile.avatar_url=null;
+    updateHeaderAvatar();render();toast("Foto rimossa!");
+  }catch(e){toast("Errore: "+e.message)}
+}
 async function doLogout(){await signOut();library=[];myProfile=null;document.getElementById("app").style.display="none";document.getElementById("auth-screen").style.display="flex"}
 function exportLib(){const a=document.createElement("a");a.href="data:application/json;charset=utf-8,"+encodeURIComponent(JSON.stringify({library,exported:new Date().toISOString()},null,2));a.download="mangatrack_backup.json";a.click()}
 
