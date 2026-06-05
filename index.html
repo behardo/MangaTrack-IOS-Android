@@ -130,9 +130,7 @@
     <div class="auth-field"><label>Password</label><input type="password" id="auth-pass" placeholder="••••••••"/></div>
     <button class="btn btn-primary btn-block" id="auth-submit-btn" onclick="submitAuth()">Accedi</button>
   </div>
-</div>
-
-<div id="username-screen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:150;align-items:center;justify-content:center;padding:32px 24px;flex-direction:column;">
+</div> style="display:none;position:fixed;inset:0;background:var(--bg);z-index:150;align-items:center;justify-content:center;padding:32px 24px;flex-direction:column;">
   <div class="auth-logo" style="margin-bottom:8px;">MANGA<span>TRACK</span></div>
   <div style="font-size:14px;color:var(--muted);margin-bottom:32px;text-align:center;">Scegli il tuo username</div>
   <div class="auth-card">
@@ -201,7 +199,8 @@ const del=(table,match)=>api(`/rest/v1/${table}?${match}`,{method:"DELETE"});
 async function signIn(e,p){return api("/auth/v1/token?grant_type=password",{method:"POST",body:JSON.stringify({email:e,password:p})})}
 async function signUp(e,p){return api("/auth/v1/signup",{method:"POST",body:JSON.stringify({email:e,password:p})})}
 async function signOut(){await api("/auth/v1/logout",{method:"POST"}).catch(()=>{});session=null;localStorage.removeItem("mt_s")}
-async function refreshToken(rt){return api("/auth/v1/token?grant_type=refresh_token",{method:"POST",body:JSON.stringify({refresh_token:rt})})}
+async function refreshToken(rt){return api("/auth/v1/token?grant_type=refresh_token",{method:"POST",body:JSON.stringify({refresh_token:rt})});}
+
 
 const STATUS=["In lettura","Completati","In pausa","Abbandonati","Da leggere"];
 const SC={"In lettura":"#e74c3c","Completati":"#27ae60","In pausa":"#f39c12","Abbandonati":"#7f8c8d","Da leggere":"#3498db"};
