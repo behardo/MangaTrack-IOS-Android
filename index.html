@@ -361,8 +361,7 @@ function avatarEl(profile,size=36){
   const c=profile?.avatar_color||"#c0392b";
   const i=(profile?.username||"?")[0].toUpperCase();
   if(profile?.avatar_url){
-    const uid="av"+Math.random().toString(36).slice(2,8);
-    return `<img id="${uid}" src="${esc(profile.avatar_url)}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;flex-shrink:0;box-shadow:0 0 0 2px ${c}55;" onerror="var e=document.getElementById('${uid}');if(e){var d=document.createElement('div');d.className='avatar';d.style='width:${size}px;height:${size}px;font-size:${Math.round(size*.38)}px;background:${c};box-shadow:0 0 0 2px ${c}55;';d.textContent='${i}';e.parentNode.replaceChild(d,e);}">`;
+    return `<img src="${esc(profile.avatar_url)}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;flex-shrink:0;box-shadow:0 0 0 2px ${c}55;display:block;">`;
   }
   return `<div class="avatar" style="width:${size}px;height:${size}px;font-size:${Math.round(size*.38)}px;background:${c};box-shadow:0 0 0 2px ${c}55;">${i}</div>`;
 }
@@ -581,10 +580,10 @@ function renderSettings(){
   return `<div style="font-weight:800;font-size:18px;margin-bottom:14px;color:var(--red);">Impostazioni</div>
   <div class="card">
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
-      <div style="position:relative;">
+      <div style="position:relative;flex-shrink:0;">
         ${avatarEl(myProfile,64)}
-        <label for="avatar-upload" style="position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;background:var(--red);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;box-shadow:0 1px 4px #0006;">✎</label>
-        <input type="file" id="avatar-upload" accept="image/*" style="display:none;" onchange="uploadAvatar(this.files[0])">
+        <label for="avatar-upload" style="position:absolute;bottom:0;right:0;width:22px;height:22px;background:var(--red);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;box-shadow:0 1px 4px #0006;color:#fff;">✎</label>
+        <input type="file" id="avatar-upload" accept="image/jpeg,image/png,image/webp" style="display:none;" onchange="uploadAvatar(this.files[0])">
       </div>
       <div style="flex:1;">
         <div style="font-weight:800;font-size:16px;">@${esc(myProfile?.username||"")}</div>
