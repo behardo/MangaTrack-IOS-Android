@@ -130,7 +130,9 @@
     <div class="auth-field"><label>Password</label><input type="password" id="auth-pass" placeholder="••••••••"/></div>
     <button class="btn btn-primary btn-block" id="auth-submit-btn" onclick="submitAuth()">Accedi</button>
   </div>
-</div> style="display:none;position:fixed;inset:0;background:var(--bg);z-index:150;align-items:center;justify-content:center;padding:32px 24px;flex-direction:column;">
+</div>
+
+<div id="username-screen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:150;align-items:center;justify-content:center;padding:32px 24px;flex-direction:column;">
   <div class="auth-logo" style="margin-bottom:8px;">MANGA<span>TRACK</span></div>
   <div style="font-size:14px;color:var(--muted);margin-bottom:32px;text-align:center;">Scegli il tuo username</div>
   <div class="auth-card">
@@ -199,8 +201,7 @@ const del=(table,match)=>api(`/rest/v1/${table}?${match}`,{method:"DELETE"});
 async function signIn(e,p){return api("/auth/v1/token?grant_type=password",{method:"POST",body:JSON.stringify({email:e,password:p})})}
 async function signUp(e,p){return api("/auth/v1/signup",{method:"POST",body:JSON.stringify({email:e,password:p})})}
 async function signOut(){await api("/auth/v1/logout",{method:"POST"}).catch(()=>{});session=null;localStorage.removeItem("mt_s")}
-async function refreshToken(rt){return api("/auth/v1/token?grant_type=refresh_token",{method:"POST",body:JSON.stringify({refresh_token:rt})});}
-
+async function refreshToken(rt){return api("/auth/v1/token?grant_type=refresh_token",{method:"POST",body:JSON.stringify({refresh_token:rt})})}
 
 const STATUS=["In lettura","Completati","In pausa","Abbandonati","Da leggere"];
 const SC={"In lettura":"#e74c3c","Completati":"#27ae60","In pausa":"#f39c12","Abbandonati":"#7f8c8d","Da leggere":"#3498db"};
@@ -404,77 +405,19 @@ function libList(){
 function onLibSearch(v){libSearch=v;updateLib()}
 function updateLib(){const c=document.getElementById("lib-chips"),s=document.getElementById("lib-sort"),l=document.getElementById("lib-list");if(c)c.innerHTML=libChips();if(s)s.innerHTML=libSortH();if(l)l.innerHTML=libList()}
 
-function renderSearch(){
-  const recent=JSON.parse(localStorage.getItem("mt_recent_searches")||"[]");
-  return `<div style="font-weight:800;font-size:18px;margin-bottom:12px;color:var(--red);">Cerca Online</div>
-  <input type="search" id="online-search" value="${esc(searchQ)}" placeholder="Cerca su MyAnimeList..." oninput="onSQ(this.value)" style="margin-bottom:12px;">
-  ${!searchQ&&recent.length?`<div class="card" style="margin-bottom:10px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-      <div class="section-label" style="margin-bottom:0;">Ricerche recenti</div>
-      <button onclick="clearRecentSearches()" style="font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;">Cancella</button>
-    </div>
-    ${recent.map(r=>`<div onclick="setSearch('${esc(r)}')" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;">
-      <span style="color:var(--muted);font-size:16px;">◎</span>
-      <span style="font-size:13px;flex:1;">${esc(r)}</span>
-      <span style="color:var(--muted);font-size:11px;">→</span>
-    </div>`).join("")}
-  </div>`:""}
-  <div id="search-results"></div>`;
-}
-
-function setSearch(v){
-  searchQ=v;
-  render();
-  setTimeout(()=>{
-    const inp=document.getElementById("online-search");
-    if(inp){inp.value=v;onSQ(v);}
-  },50);
-}
-
-function saveRecentSearch(v){
-  if(!v.trim())return;
-  let recent=JSON.parse(localStorage.getItem("mt_recent_searches")||"[]");
-  recent=recent.filter(r=>r!==v);
-  recent.unshift(v);
-  recent=recent.slice(0,5);
-  localStorage.setItem("mt_recent_searches",JSON.stringify(recent));
-}
-
-function clearRecentSearches(){
-  localStorage.removeItem("mt_recent_searches");
-  render();
-}
-function onSQ(v){
-  searchQ=v;clearTimeout(searchTimer);
-  if(!v.trim()){searchResults=[];renderSearchResults();return}
-  searching=true;renderSearchResults();
-  searchTimer=setTimeout(()=>{
-    saveRecentSearch(v);
-    fetch(`https://api.jikan.moe/v4/manga?q=${encodeURIComponent(v)}&limit=10`)
-      .then(r=>r.json()).then(d=>{searchResults=d.data||[];searching=false;renderSearchResults()})
-      .catch(()=>{searchResults=[];searching=false;renderSearchResults()});
-  },500);
-}
+function renderSearch(){return `<div style="font-weight:800;font-size:18px;margin-bottom:12px;color:var(--red);">Cerca Online</div><input type="search" id="online-search" value="${esc(searchQ)}" placeholder="Cerca su MyAnimeList..." oninput="onSQ(this.value)" style="margin-bottom:12px;"><div id="search-results"></div>`}
+function onSQ(v){searchQ=v;clearTimeout(searchTimer);if(!v.trim()){searchResults=[];renderSearchResults();return}searching=true;renderSearchResults();searchTimer=setTimeout(()=>{fetch(`https://api.jikan.moe/v4/manga?q=${encodeURIComponent(v)}&limit=10`).then(r=>r.json()).then(d=>{searchResults=d.data||[];searching=false;renderSearchResults()}).catch(()=>{searchResults=[];searching=false;renderSearchResults()})},500)}
 function renderSearchResults(){
   const el=document.getElementById("search-results");if(!el)return;
   let h="";
   if(searching)h=`<div class="empty">🔍 Ricerca in corso...</div>`;
-  else if(!searchQ.trim()){
-    // show trending if no query
-    const el=document.getElementById("search-results");
-    if(el&&!trendingLoaded){
-      el.innerHTML=`<div class="section-label" style="margin-bottom:10px;">🔥 Trending su MAL</div><div class="empty"><div class="spinner" style="margin:0 auto;"></div></div>`;
-      loadTrending();
-    }
-    return;
-  }
+  else if(!searchQ.trim())h=`<div class="empty"><span class="empty-icon">◎</span>Cerca qualsiasi manga su MyAnimeList</div>`;
   else if(!searchResults.length)h=`<div class="empty">Nessun risultato per "${esc(searchQ)}"</div>`;
   else searchResults.forEach((m,i)=>{const title=m.title_english||m.title,img=m.images?.jpg?.image_url||"";const genres=(m.genres||[]).slice(0,2).map(g=>g.name).join(", ");const inLib=library.some(x=>x.title===title);h+=`<div class="card card-tap" onclick="openPreview(${i})"><div class="manga-row">${img?`<img src="${esc(img)}" class="cover" style="width:54px;height:76px;" loading="lazy" onerror="this.style.display='none'">`:`<div class="cover-ph" style="width:54px;height:76px;"><span style="font-size:15px;">${title.slice(0,2).toUpperCase()}</span></div>`}<div style="flex:1;min-width:0;"><div style="font-weight:800;font-size:13px;margin-bottom:3px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${esc(title)}</div><div style="font-size:11px;color:var(--muted);margin-bottom:4px;">${genres}${m.chapters?` · ${m.chapters} cap.`:""}</div>${m.score?`<div style="font-size:11px;color:#f1c40f;">★ ${m.score}</div>`:""}</div>${inLib?`<span style="font-size:11px;color:var(--muted);flex-shrink:0;align-self:center;">✓</span>`:`<span style="font-size:20px;color:var(--red);flex-shrink:0;align-self:center;">+</span>`}</div></div>`});
   el.innerHTML=h;
 }
-function openPreview(idx,fromTrending=false){
-  previewManga=fromTrending?trendingResults[idx]:searchResults[idx];
-  if(!previewManga)return;
+function openPreview(idx){
+  previewManga=searchResults[idx];if(!previewManga)return;
   const m=previewManga,title=m.title_english||m.title,img=m.images?.jpg?.image_url||"";
   const inLib=library.some(x=>x.title===title);
   const genres=(m.genres||[]).map(g=>g.name).join(", ");
