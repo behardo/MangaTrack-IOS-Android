@@ -359,11 +359,12 @@ function pct(m){return m.total_chapters?Math.min(100,Math.round((m.chapters/m.to
 function timeAgo(ts){const s=Math.floor((Date.now()-new Date(ts))/1000);if(s<60)return"ora";if(s<3600)return Math.floor(s/60)+"m fa";if(s<86400)return Math.floor(s/3600)+"h fa";return Math.floor(s/86400)+"g fa"}
 function avatarEl(profile,size=36){
   const c=profile?.avatar_color||"#c0392b";
-  if(profile?.avatar_url){
-    return `<img src="${esc(profile.avatar_url)}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;flex-shrink:0;box-shadow:0 0 0 2px ${c}55;" onerror="this.outerHTML='${`<div class=\\"avatar\\" style=\\"width:${size}px;height:${size}px;font-size:${Math.round(size*.38)}px;background:${c};box-shadow:0 0 0 2px ${c}55;\\">${(profile?.username||"?")[0].toUpperCase()}</div>`}'">`;
-  }
   const i=(profile?.username||"?")[0].toUpperCase();
-  return `<div class="avatar" style="width:${size}px;height:${size}px;font-size:${Math.round(size*.38)}px;background:${c};box-shadow:0 0 0 2px ${c}55;">${i}</div>`;
+  const fallback=`<div class="avatar" style="width:${size}px;height:${size}px;font-size:${Math.round(size*.38)}px;background:${c};box-shadow:0 0 0 2px ${c}55;">${i}</div>`;
+  if(profile?.avatar_url){
+    return `<img src="${esc(profile.avatar_url)}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;flex-shrink:0;box-shadow:0 0 0 2px ${c}55;" onerror="this.replaceWith(document.createRange().createContextualFragment('${fallback.replace(/'/g,"\\'")}'))">`;
+  }
+  return fallback;
 }
 
 function render(){
