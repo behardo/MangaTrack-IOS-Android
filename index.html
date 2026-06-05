@@ -488,17 +488,7 @@ async function addFromPreview(){
   const title=m.title_english||m.title;
   if(library.some(x=>x.title===title)){toast("Già in libreria!");closePreview();return}
   const manga={title,status:"Da leggere",chapters:0,total_chapters:m.chapters||null,score:0,genre:m.genres?.[0]?.name||"Action",cover:m.images?.jpg?.image_url||null,favourite:false,review:""};
-  // animazione bottone
-  const btn=document.querySelector("#preview-body .btn-primary");
-  if(btn){btn.textContent="Aggiunta in corso...";btn.disabled=true;}
-  try{
-    const res=await ins("library",{...manga,user_id:session.user.id});
-    library.unshift(res[0]||{...manga,id:Date.now()});
-    await ins("activity",{user_id:session.user.id,type:"added",manga_title:title,manga_cover:manga.cover,details:""}).catch(()=>{});
-    toast(`✓ "${title.slice(0,20)}${title.length>20?"…":""}" aggiunto!`);
-    closePreview();renderSearchResults();
-    if(!searchQ.trim()&&trendingLoaded){const el=document.getElementById("search-results");if(el)renderTrending(el);}
-  }catch(e){toast("Errore: "+e.message);if(btn){btn.textContent="+ Aggiungi alla libreria";btn.disabled=false;}}
+  try{const res=await ins("library",{...manga,user_id:session.user.id});library.unshift(res[0]||{...manga,id:Date.now()});await ins("activity",{user_id:session.user.id,type:"added",manga_title:title,manga_cover:manga.cover,details:""}).catch(()=>{});toast(`"${title}" aggiunto!`);closePreview();renderSearchResults()}catch(e){toast("Errore: "+e.message)}
 }
 
 function renderSocial(){
