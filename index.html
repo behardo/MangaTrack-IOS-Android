@@ -450,6 +450,7 @@ function renderLibrary(){
   <div id="lib-list">${libList()}</div>`;
 }
 
+let libGenreFilter="Tutti";
 
 function libChips(){let h=`<button class="chip${libFilter==="Tutti"?" active":""}" onclick="libFilter='Tutti';updateLib()">Tutti (${library.length})</button>`;STATUS.forEach(s=>{const n=library.filter(m=>m.status===s).length;if(n>0)h+=`<button class="chip${libFilter===s?" active":""}" onclick="libFilter='${s}';updateLib()" style="${libFilter===s?`background:${SC[s]};border-color:${SC[s]};color:#fff;`:""}">${s} (${n})</button>`});return h}
 function libSortH(){return [["title","A-Z"],["score","Voto"],["chapters","Cap."],["added","Data"]].map(([v,l])=>`<button class="sort-pill${libSort===v?" active":""}" onclick="libSort='${v}';updateLib()">${l}</button>`).join("")}
@@ -516,7 +517,7 @@ function renderSearchResults(){
 
 async function loadTrending(){
   const el=document.getElementById("search-results");
-  if(el)el.innerHTML=`<div class="section-label" style="margin-bottom:10px;">🔥 Trending su MAL</div><div class="empty"><div class="spinner" style="margin:0 auto;"></div></div>`;
+  if(el)el.innerHTML=`    <div class="section-label" style="margin-bottom:10px;">◈ Trending su MAL</div><div class="empty"><div class="spinner" style="margin:0 auto;"></div></div>`;
   try{
     const r=await fetch("https://api.jikan.moe/v4/top/manga?limit=10&type=manga");
     const d=await r.json();
@@ -528,7 +529,7 @@ async function loadTrending(){
 
 function renderTrending(el){
   if(!trendingResults.length)return;
-  let h=`<div class="section-label" style="margin-bottom:10px;">🔥 Trending su MAL</div>`;
+  let h=`<div class="section-label" style="margin-bottom:10px;">◈ Trending su MAL</div>`;
   trendingResults.forEach((m,i)=>{
     const title=m.title_english||m.title,img=m.images?.jpg?.image_url||"";
     const inLib=library.some(x=>x.title===title);
@@ -748,11 +749,13 @@ function renderSettings(){
       <div style="flex:1;">
         <div style="font-weight:800;font-size:16px;">@${esc(myProfile?.username||"")}</div>
         <div style="font-size:12px;color:var(--muted);">${esc(email)}</div>
-        ${myProfile?.avatar_url?`<button onclick="removeAvatar()" style="font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;margin-top:3px;padding:0;">Rimuovi foto</button>`:`<div style="font-size:11px;color:var(--muted);margin-top:3px;">Tocca ✎ per aggiungere una foto</div>`}
+            ${myProfile?.avatar_url
+          ?`<button onclick="removeAvatar()" style="font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;margin-top:3px;padding:0;">Rimuovi foto</button>`
+          :`<div style="font-size:11px;color:var(--muted);margin-top:3px;">Tocca ✎ per aggiungere una foto</div>`}
       </div>
     </div>
-    <div class="section-label">Colore avatar</div>
-    <div style="display:flex;gap:10px;margin-bottom:14px;">${colorOptions.map(c=>`<div onclick="changeAvatarColor('${c}')" style="width:32px;height:32px;border-radius:50%;background:${c};cursor:pointer;border:3px solid ${myProfile?.avatar_color===c?"#fff":"transparent"};transition:border .2s;"></div>`).join("")}</div>
+    ${!myProfile?.avatar_url?`<div class="section-label">Colore avatar</div>
+    <div style="display:flex;gap:10px;margin-bottom:14px;">${colorOptions.map(c=>`<div onclick="changeAvatarColor('${c}')" style="width:32px;height:32px;border-radius:50%;background:${c};cursor:pointer;border:3px solid ${myProfile?.avatar_color===c?"#fff":"transparent"};transition:border .2s;"></div>`).join("")}</div>`:""}
     <button class="btn btn-danger btn-block" onclick="doLogout()">Esci dall'account</button>
   </div>
   <div class="card">
