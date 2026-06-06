@@ -450,7 +450,6 @@ function renderLibrary(){
   <div id="lib-list">${libList()}</div>`;
 }
 
-let libGenreFilter="Tutti";
 
 function libChips(){let h=`<button class="chip${libFilter==="Tutti"?" active":""}" onclick="libFilter='Tutti';updateLib()">Tutti (${library.length})</button>`;STATUS.forEach(s=>{const n=library.filter(m=>m.status===s).length;if(n>0)h+=`<button class="chip${libFilter===s?" active":""}" onclick="libFilter='${s}';updateLib()" style="${libFilter===s?`background:${SC[s]};border-color:${SC[s]};color:#fff;`:""}">${s} (${n})</button>`});return h}
 function libSortH(){return [["title","A-Z"],["score","Voto"],["chapters","Cap."],["added","Data"]].map(([v,l])=>`<button class="sort-pill${libSort===v?" active":""}" onclick="libSort='${v}';updateLib()">${l}</button>`).join("")}
