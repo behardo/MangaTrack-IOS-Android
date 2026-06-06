@@ -699,14 +699,20 @@ async function renderForYou(el){
   if(topGenres.length){
     try{
       const genre=topGenres[0];
-      const r=await fetch(`https://api.jikan.moe/v4/manga?genres=&order_by=score&sort=desc&limit=10&q=${encodeURIComponent(genre)}`);
-      const d=await r.json();
-      const results=(d.data||[]).filter(m=>!myTitles.has(m.title_english||m.title)).slice(0,6);
-      if(results.length){
-        sections.push({
-          label:`Basato su: ${topGenres.slice(0,2).join(", ")}`,
-          jikanItems:results
-        });
+const page=Math.floor(Math.random()*50)+1;
+const r=await fetch(`https://api.jikan.moe/v4/manga?order_by=score&sort=desc&limit=20&page=${page}&_=${Date.now()}`);
+const d=await r.json();
+const results=(d.data||[]).filter(m=>!myTitles.has(m.title_english||m.title)).slice(0,6);
+if(results.length){
+  sections.push({label:"Scopri nuovi manga",jikanItems:results});
+  window._forYouJikan=results;
+}else{
+  // riprova con genere diverso
+  const fallbackGenre=topGenres[Math.floor(Math.random()*topGenres.length)];
+  const r2=await fetch(`https://api.jikan.moe/v4/manga?order_by=score&sort=desc&limit=10&q=${encodeURIComponent(fallbackGenre)}&_=${Date.now()}`);
+  const d2=await r2.json();
+  const results2=(d2.data||[]).filter(m=>!myTitles.has(m.title_english||m.title)).slice(0,6);
+  if(results2.length){sections.push({label:`Basato su: ${fallbackGenre}`,jikanItems:results2});window._forYouJikan=results2;}
       }
     }catch{}
   }
@@ -716,7 +722,7 @@ async function renderForYou(el){
     return;
   }
 
-  let h="";
+  let h=`<div style="display:flex;justify-content:flex-end;margin-bottom:10px;"><button class="btn btn-sm" onclick="renderForYou(document.getElementById('social-content'))">↺ Aggiorna consigli</button></div>`;
   sections.forEach(sec=>{
     h+=`<div class="card" style="margin-bottom:10px;"><div class="section-label">${esc(sec.label)}</div>`;
     if(sec.items){
