@@ -4,6 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="apple-mobile-web-app-title" content="MangaTrack"/>
   <meta name="theme-color" content="#0d0d0d"/>
@@ -517,32 +518,31 @@ function renderSearchResults(){
 
 async function loadTrending(){
   const el=document.getElementById("search-results");
-  if(el)el.innerHTML=`    <div class="section-label" style="margin-bottom:10px;">◈ Trending su MAL</div><div class="empty"><div class="spinner" style="margin:0 auto;"></div></div>`;
+  if(el)el.innerHTML=`<div class="section-label" style="margin-bottom:10px;">◈ Trending su MAL</div><div class="empty"><div class="spinner" style="margin:0 auto;"></div></div>`;
   try{
-    const r=await fetch("https://api.jikan.moe/v4/top/manga?limit=10&type=manga");
-    const d=await r.json();
-    trendingResults=d.data||[];trendingLoaded=true;
-    const el2=document.getElementById("search-results");
-    if(el2&&!searchQ)renderTrending(el2);
-  }catch{if(el)el.innerHTML=`<div class="empty"><span class="empty-icon">◎</span>Cerca qualsiasi manga su MyAnimeList</div>`}
+    let data = null;
+    for(let i = 0; i < 3; i++) {
+      try {
+        const r = await fetch("https://api.jikan.moe/v4/top/manga?limit=10&type=manga");
+        if(r.ok) { data = await r.json(); break; }
+        if(r.status === 504) {
+          await new Promise(resolve => setTimeout(resolve, 2000 * (i + 1)));
+          continue;
+        }
+        throw new Error(`HTTP ${r.status}`);
+      } catch(e) {
+        if(i === 2) throw e;
+        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+      }
+    }
+    trendingResults = data?.data || [];
+    trendingLoaded = true;
+    const el2 = document.getElementById("search-results");
+    if(el2 && !searchQ) renderTrending(el2);
+  } catch(e){
+    if(el) el.innerHTML = `<div class="empty"><span class="empty-icon">◎</span>Impossibile caricare i trending (${e.message})<br><button class="btn btn-sm" onclick="loadTrending()" style="margin-top:10px;">↺ Riprova</button></div>`;
+  }
 }
-
-function renderTrending(el){
-  if(!trendingResults.length)return;
-  let h=`<div class="section-label" style="margin-bottom:10px;">◈ Trending su MAL</div>`;
-  trendingResults.forEach((m,i)=>{
-    const title=m.title_english||m.title,img=m.images?.jpg?.image_url||"";
-    const inLib=library.some(x=>x.title===title);
-    h+=`<div class="card card-tap" onclick="openPreview(${i},true)"><div class="manga-row">
-      <div style="width:28px;height:28px;border-radius:8px;background:var(--redd);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;color:var(--red);flex-shrink:0;">${i+1}</div>
-      ${img?`<img src="${esc(img)}" class="cover" style="width:44px;height:62px;" loading="lazy" onerror="this.style.display='none'">`:`<div class="cover-ph" style="width:44px;height:62px;"><span style="font-size:12px;">${title.slice(0,2).toUpperCase()}</span></div>`}
-      <div style="flex:1;min-width:0;"><div style="font-weight:800;font-size:13px;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(title)}</div><div style="font-size:11px;color:var(--muted);">${(m.genres||[]).slice(0,2).map(g=>g.name).join(", ")}${m.chapters?` · ${m.chapters} cap.`:""}</div>${m.score?`<div style="font-size:11px;color:#f1c40f;margin-top:2px;">★ ${m.score}</div>`:""}</div>
-      ${inLib?`<span style="font-size:11px;color:var(--muted);flex-shrink:0;align-self:center;">✓</span>`:`<span style="font-size:20px;color:var(--red);flex-shrink:0;align-self:center;">+</span>`}
-    </div></div>`;
-  });
-  el.innerHTML=h;
-}
-
 // ─── PREVIEW ──────────────────────────────────────────────────────────────────
 function openPreview(idx,fromTrending){
   previewManga=fromTrending?trendingResults[idx]:searchResults[idx];
