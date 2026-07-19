@@ -1,4 +1,4 @@
-const CACHE = "mangatrack-v1";
+const CACHE = "mangatrack-v2";
 const ASSETS = ["/index.html", "/manifest.json", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", e => {
@@ -14,8 +14,8 @@ self.addEventListener("activate", e => {
 });
 
 self.addEventListener("fetch", e => {
-  // Jikan API: sempre network-first
-  if (e.request.url.includes("jikan.moe") || e.request.url.includes("cdn.myanimelist")) {
+  // AniList API: sempre network-first
+  if (e.request.url.includes("graphql.anilist.co")) {
     e.respondWith(fetch(e.request).catch(() => new Response("", { status: 503 })));
     return;
   }
