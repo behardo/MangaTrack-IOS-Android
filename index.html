@@ -199,6 +199,30 @@ const ins=(table,data)=>api(`/rest/v1/${table}`,{method:"POST",headers:{"Prefer"
 const upd=(table,match,data)=>api(`/rest/v1/${table}?${match}`,{method:"PATCH",headers:{"Prefer":"return=representation"},body:JSON.stringify(data)});
 const del=(table,match)=>api(`/rest/v1/${table}?${match}`,{method:"DELETE"});
 
+// ─── ANILIST ─────────────────────────────────────────────────────────────────
+const ANILIST_FIELDS=`title{romaji english}coverImage{large}genres chapters volumes format averageScore description(asHtml:false)`;
+async function anilist(query,variables){
+  const r=await fetch("https://graphql.anilist.co",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({query,variables})});
+  const d=await r.json();
+  if(!r.ok||d.errors)throw new Error(d.errors?.[0]?.message||`HTTP ${r.status}`);
+  return d.data;
+}
+// converte un oggetto Media di AniList nello stesso formato usato finora (stile Jikan) così il resto del codice non cambia
+function mapAniList(m){
+  return{
+    title:m.title.romaji,
+    title_english:m.title.english||null,
+    images:{jpg:{image_url:m.coverImage?.large||""}},
+    genres:(m.genres||[]).map(g=>({name:g})),
+    chapters:m.chapters,
+    volumes:m.volumes,
+    type:m.format,
+    score:m.averageScore?Math.round(m.averageScore)/10:null,
+    synopsis:m.description?m.description.replace(/<[^>]+>/g,""):"",
+    rank:null
+  };
+}
+
 async function signIn(e,p){return api("/auth/v1/token?grant_type=password",{method:"POST",body:JSON.stringify({email:e,password:p})})}
 async function signUp(e,p){return api("/auth/v1/signup",{method:"POST",body:JSON.stringify({email:e,password:p})})}
 async function signOut(){await api("/auth/v1/logout",{method:"POST"}).catch(()=>{});session=null;localStorage.removeItem("mt_s")}
@@ -501,8 +525,8 @@ function onSQ(v){
   searching=true;renderSearchResults();
   searchTimer=setTimeout(()=>{
     saveSearch(v);
-    fetch(`https://api.jikan.moe/v4/manga?q=${encodeURIComponent(v)}&limit=10`)
-      .then(r=>r.json()).then(d=>{searchResults=d.data||[];searching=false;renderSearchResults()})
+    anilist(`query($s:String){Page(page:1,perPage:10){media(search:$s,type:MANGA,sort:SEARCH_MATCH){${ANILIST_FIELDS}}}}`,{s:v})
+      .then(d=>{searchResults=(d.Page?.media||[]).map(mapAniList);searching=false;renderSearchResults()})
       .catch(()=>{searchResults=[];searching=false;renderSearchResults()});
   },500);
 }
@@ -516,26 +540,29 @@ function renderSearchResults(){
   el.innerHTML=h;
 }
 
+function renderTrending(el){
+  if(!el)return;
+  let h=`<div class="section-label" style="margin-bottom:10px;">◈ Trending su AniList</div>`;
+  if(!trendingResults.length){h+=`<div class="empty">Nessun risultato</div>`;}
+  else{trendingResults.forEach((m,i)=>{const title=m.title_english||m.title,img=m.images?.jpg?.image_url||"";const genres=(m.genres||[]).slice(0,2).map(g=>g.name).join(", ");const inLib=library.some(x=>x.title===title);h+=`<div class="card card-tap" onclick="openPreview(${i},true)"><div class="manga-row">${img?`<img src="${esc(img)}" class="cover" style="width:54px;height:76px;" loading="lazy" onerror="this.style.display='none'">`:`<div class="cover-ph" style="width:54px;height:76px;"><span style="font-size:15px;">${title.slice(0,2).toUpperCase()}</span></div>`}<div style="flex:1;min-width:0;"><div style="font-weight:800;font-size:13px;margin-bottom:3px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${esc(title)}</div><div style="font-size:11px;color:var(--muted);margin-bottom:4px;">${genres}${m.chapters?` · ${m.chapters} cap.`:""}</div>${m.score?`<div style="font-size:11px;color:#f1c40f;">★ ${m.score}</div>`:""}</div>${inLib?`<span style="font-size:11px;color:var(--muted);flex-shrink:0;align-self:center;">✓</span>`:`<span style="font-size:20px;color:var(--red);flex-shrink:0;align-self:center;">+</span>`}</div></div>`});}
+  el.innerHTML=h;
+}
+
 async function loadTrending(){
   const el=document.getElementById("search-results");
-  if(el)el.innerHTML=`<div class="section-label" style="margin-bottom:10px;">◈ Trending su MAL</div><div class="empty"><div class="spinner" style="margin:0 auto;"></div></div>`;
+  if(el)el.innerHTML=`<div class="section-label" style="margin-bottom:10px;">◈ Trending su AniList</div><div class="empty"><div class="spinner" style="margin:0 auto;"></div></div>`;
   try{
     let data = null;
     for(let i = 0; i < 3; i++) {
       try {
-        const r = await fetch("https://api.jikan.moe/v4/top/manga?limit=10&type=manga");
-        if(r.ok) { data = await r.json(); break; }
-        if(r.status === 504) {
-          await new Promise(resolve => setTimeout(resolve, 2000 * (i + 1)));
-          continue;
-        }
-        throw new Error(`HTTP ${r.status}`);
+        data = await anilist(`query{Page(page:1,perPage:10){media(sort:TRENDING_DESC,type:MANGA){${ANILIST_FIELDS}}}}`);
+        break;
       } catch(e) {
         if(i === 2) throw e;
         await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
       }
     }
-    trendingResults = data?.data || [];
+    trendingResults = (data?.Page?.media || []).map(mapAniList);
     trendingLoaded = true;
     const el2 = document.getElementById("search-results");
     if(el2 && !searchQ) renderTrending(el2);
@@ -637,12 +664,12 @@ async function openActivityManga(title,cover){
   // cerca il manga nella propria libreria
   const inLib=library.find(m=>m.title===title);
   if(inLib){detail=inLib;pushView(title,renderDetailHTML);return}
-  // altrimenti mostra preview cercandolo su Jikan
+  // altrimenti mostra preview cercandolo su AniList
   toast("Ricerca manga...");
   try{
-    const r=await fetch(`https://api.jikan.moe/v4/manga?q=${encodeURIComponent(title)}&limit=5`);
-    const d=await r.json();
-    const found=d.data?.find(m=>(m.title_english||m.title)===title)||d.data?.[0];
+    const d=await anilist(`query($s:String){Page(page:1,perPage:5){media(search:$s,type:MANGA,sort:SEARCH_MATCH){${ANILIST_FIELDS}}}}`,{s:title});
+    const results=(d.Page?.media||[]).map(mapAniList);
+    const found=results.find(m=>(m.title_english||m.title)===title)||results[0];
     if(found){
       // trova l'indice e apri preview
       searchResults=[found];
@@ -695,24 +722,22 @@ async function renderForYou(el){
     }
   }catch{}
 
-  // 2. Per genere preferito — cerca su Jikan
+  // 2. Per genere preferito — cerca su AniList
   if(topGenres.length){
     try{
       const genre=topGenres[0];
-const page=Math.floor(Math.random()*50)+1;
-const r=await fetch(`https://api.jikan.moe/v4/manga?order_by=score&sort=desc&limit=20&page=${page}&_=${Date.now()}`);
-const d=await r.json();
-const results=(d.data||[]).filter(m=>!myTitles.has(m.title_english||m.title)).slice(0,6);
-if(results.length){
-  sections.push({label:"Scopri nuovi manga",jikanItems:results});
-  window._forYouJikan=results;
-}else{
-  // riprova con genere diverso
-  const fallbackGenre=topGenres[Math.floor(Math.random()*topGenres.length)];
-  const r2=await fetch(`https://api.jikan.moe/v4/manga?order_by=score&sort=desc&limit=10&q=${encodeURIComponent(fallbackGenre)}&_=${Date.now()}`);
-  const d2=await r2.json();
-  const results2=(d2.data||[]).filter(m=>!myTitles.has(m.title_english||m.title)).slice(0,6);
-  if(results2.length){sections.push({label:`Basato su: ${fallbackGenre}`,jikanItems:results2});window._forYouJikan=results2;}
+      const page=Math.floor(Math.random()*10)+1;
+      const d=await anilist(`query($g:String,$p:Int){Page(page:$p,perPage:20){media(genre_in:[$g],sort:SCORE_DESC,type:MANGA){${ANILIST_FIELDS}}}}`,{g:genre,p:page});
+      const results=(d.Page?.media||[]).map(mapAniList).filter(m=>!myTitles.has(m.title_english||m.title)).slice(0,6);
+      if(results.length){
+        sections.push({label:"Scopri nuovi manga",jikanItems:results});
+        window._forYouJikan=results;
+      }else{
+        // riprova con genere diverso
+        const fallbackGenre=topGenres[Math.floor(Math.random()*topGenres.length)];
+        const d2=await anilist(`query($g:String){Page(page:1,perPage:10){media(genre_in:[$g],sort:SCORE_DESC,type:MANGA){${ANILIST_FIELDS}}}}`,{g:fallbackGenre});
+        const results2=(d2.Page?.media||[]).map(mapAniList).filter(m=>!myTitles.has(m.title_english||m.title)).slice(0,6);
+        if(results2.length){sections.push({label:`Basato su: ${fallbackGenre}`,jikanItems:results2});window._forYouJikan=results2;}
       }
     }catch{}
   }
@@ -926,7 +951,7 @@ function renderSettings(){
     ${installTab==='ios'?`<div style="display:flex;flex-direction:column;gap:12px;">${[["1","Apri in","Safari","non Chrome o Brave"],["2","Tocca","Condividi","quadrato con freccia"],["3","Tocca","Aggiungi a schermata Home",""],["4","Tocca","Aggiungi","in alto a destra"]].map(([n,pre,bold,post])=>`<div style="display:flex;align-items:center;gap:12px;"><div style="width:28px;height:28px;border-radius:50%;background:var(--red);color:#fff;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${n}</div><div style="font-size:13px;">${pre} <strong style="color:var(--red);">${bold}</strong>${post?" — "+post:""}</div></div>`).join("")}</div><div style="margin-top:12px;background:var(--redd);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--muted);">⚠️ Su iPhone funziona solo con <strong style="color:var(--text);">Safari</strong>.</div>`:`<div style="display:flex;flex-direction:column;gap:12px;">${[["1","Apri in","Chrome","o Edge, Brave"],["2","Tocca i","tre puntini","in alto ⋮"],["3","Tocca","Aggiungi a schermata Home",""],["4","Tocca","Installa",""]].map(([n,pre,bold,post])=>`<div style="display:flex;align-items:center;gap:12px;"><div style="width:28px;height:28px;border-radius:50%;background:var(--red);color:#fff;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${n}</div><div style="font-size:13px;">${pre} <strong style="color:var(--red);">${bold}</strong>${post?" — "+post:""}</div></div>`).join("")}</div><div style="margin-top:12px;background:#1a2a1a;border-radius:10px;padding:10px 12px;font-size:12px;color:var(--muted);">✅ Su Android funziona con Chrome, Edge e Brave.</div>`}
   </div>
   <div class="card"><div style="font-weight:700;font-size:14px;margin-bottom:4px;">Esporta libreria</div><div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Scarica un backup in JSON</div><button class="btn btn-primary" onclick="exportLib()">⬇ Esporta JSON</button></div>
-  <div class="card"><div style="font-size:12px;color:var(--muted);">MangaTrack v3.1 · Jikan API v4 · Supabase</div></div>`;
+  <div class="card"><div style="font-size:12px;color:var(--muted);">MangaTrack v3.1 · AniList API · Supabase</div></div>`;
 }
 
 async function uploadAvatar(file){
