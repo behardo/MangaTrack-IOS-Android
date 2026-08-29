@@ -160,6 +160,18 @@
   </div>
 </div>
 
+<div id="delete-modal" style="position:fixed;inset:0;background:#000a;z-index:110;display:none;align-items:flex-end;justify-content:center;">
+  <div style="background:var(--surface);border-radius:22px 22px 0 0;width:100%;max-width:430px;padding:0 18px calc(var(--safe-bot)+16px);animation:slideUp .28s ease">
+    <div class="preview-handle"></div>
+    <div style="font-weight:800;font-size:17px;margin-bottom:6px;color:var(--redl);">Elimina account</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.5;">Libreria, attività, follow e profilo verranno cancellati per sempre. Non è reversibile. Inserisci la tua password per confermare.</div>
+    <div id="delete-err" class="auth-err"></div>
+    <div class="auth-field"><label>Password</label><input type="password" id="delete-pass" placeholder="••••••••" autocomplete="current-password"/></div>
+    <button class="btn btn-danger btn-block" id="delete-confirm-btn" onclick="confirmDeleteAccount()" style="margin-bottom:8px">Elimina definitivamente</button>
+    <button class="btn btn-block" onclick="closeDeleteModal()">Annulla</button>
+  </div>
+</div>
+
 <div id="app" style="display:none">
   <div id="header">
     <div class="logo">MANGA<span>TRACK</span></div>
@@ -1075,10 +1087,15 @@ function renderSettings(){
       <span style="color:var(--dim);font-size:15px;">›</span>
     </a>
   </div>
-  <div class="card" style="border-color:#e74c3c33;">
-    <div class="section-label" style="color:var(--redl);">Zona pericolosa</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Elimina definitivamente la tua libreria, le attività e il profilo. Non è reversibile.</div>
-    <button class="btn btn-danger btn-block" onclick="deleteAccount()">Elimina account</button>
+  <div class="card" style="border-color:#e74c3c33;padding:0;overflow:hidden;">
+    <div class="card-tap" onclick="settingsOpen.danger=!settingsOpen.danger;render()" style="display:flex;align-items:center;gap:12px;padding:14px;">
+      <span style="font-size:14px;font-weight:700;color:var(--redl);flex:1;">Zona pericolosa</span>
+      <span style="color:var(--muted);font-size:11px;transform:rotate(${settingsOpen.danger?"180deg":"0deg"});transition:transform .2s;display:inline-block;">▾</span>
+    </div>
+    ${settingsOpen.danger?`<div style="padding:0 14px 16px;border-top:1px solid #e74c3c33;padding-top:14px;">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Elimina definitivamente la tua libreria, le attività e il profilo. Non è reversibile.</div>
+      <button class="btn btn-danger btn-block" onclick="openDeleteModal()">Elimina account</button>
+    </div>`:""}
   </div>
   <div style="text-align:right;padding:6px 2px 0;font-size:10px;color:var(--dim);">MangaTrack v3.1 · AniList API · Supabase</div>`;
 }
@@ -1116,12 +1133,38 @@ async function changePassword(){
   }catch(e){errEl.textContent=e.message||"Errore durante l'aggiornamento";errEl.style.display="block";btn.textContent="Aggiorna password";btn.disabled=false}
 }
 
-async function deleteAccount(){
-  if(!confirm("Eliminare definitivamente il tuo account MangaTrack? Libreria, attività e profilo verranno cancellati per sempre."))return;
-  const typed=prompt('Digita ELIMINA per confermare:');
-  if(typed!=="ELIMINA"){toast("Eliminazione annullata");return}
+function openDeleteModal(){
+  document.getElementById("delete-pass").value="";
+  document.getElementById("delete-err").style.display="none";
+  const btn=document.getElementById("delete-confirm-btn");btn.textContent="Elimina definitivamente";btn.disabled=false;
+  document.getElementById("delete-modal").style.display="flex";
+}
+function closeDeleteModal(e){if(e&&e.target!==document.getElementById("delete-modal"))return;document.getElementById("delete-modal").style.display="none"}
+
+async function confirmDeleteAccount(){
+  const pass=document.getElementById("delete-pass").value;
+  const errEl=document.getElementById("delete-err");errEl.style.display="none";
+  if(!pass){errEl.textContent="Inserisci la password";errEl.style.display="block";return}
+  const btn=document.getElementById("delete-confirm-btn");btn.textContent="Verifica in corso...";btn.disabled=true;
+  try{
+    // verifica la password reale prima di procedere, per evitare eliminazioni accidentali
+    await api("/auth/v1/token?grant_type=password",{method:"POST",body:JSON.stringify({email:session.user.email,password:pass})});
+  }catch(e){
+    errEl.textContent="Password errata";errEl.style.display="block";
+    btn.textContent="Elimina definitivamente";btn.disabled=false;
+    return;
+  }
+  btn.textContent="Eliminazione in corso...";
   try{
     const uid=session.user.id;
+    // cancella eventuali file caricati (es. foto profilo) prima delle righe del database
+    try{
+      const files=await api(`/storage/v1/object/list/avatars`,{method:"POST",body:JSON.stringify({prefix:`${uid}/`})});
+      if(Array.isArray(files)&&files.length){
+        const prefixes=files.map(f=>`${uid}/${f.name}`);
+        await api(`/storage/v1/object/avatars`,{method:"DELETE",body:JSON.stringify({prefixes})});
+      }
+    }catch(e){}
     await del("library",`user_id=eq.${uid}`).catch(()=>{});
     await del("activity",`user_id=eq.${uid}`).catch(()=>{});
     await del("follows",`follower_id=eq.${uid}`).catch(()=>{});
@@ -1131,7 +1174,7 @@ async function deleteAccount(){
     await del("profiles",`id=eq.${uid}`).catch(()=>{});
     toast("Dati eliminati. Disconnessione...");
     setTimeout(doLogout,1200);
-  }catch(e){toast("Errore: "+e.message)}
+  }catch(e){errEl.textContent="Errore: "+e.message;errEl.style.display="block";btn.textContent="Elimina definitivamente";btn.disabled=false}
 }
 function exportLib(){const a=document.createElement("a");a.href="data:application/json;charset=utf-8,"+encodeURIComponent(JSON.stringify({library,exported:new Date().toISOString()},null,2));a.download="mangatrack_backup.json";a.click()}
 
