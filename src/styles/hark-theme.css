@@ -1,0 +1,205 @@
+/* ==========================================================================
+   MangaTrack - Master Pop-Art Comic Theme
+   Directly loading original Hark design tokens, keyframe animations,
+   halftone patterns, and comic layout rules.
+   ========================================================================== */
+
+@import './hark-original.css';
+@import './login-scoped.css';
+@import './hark-v45.css';
+
+/* Dev screenshot helper: render CSS animations at their final state. */
+.spl.no-anim,
+.spl.no-anim * {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  transition: none !important;
+}
+
+/* Micro-adjustments for React app container & modals */
+.phone {
+  margin: 0 auto;
+}
+
+/* Ensure views stay in DOM with smooth .view.on animation */
+.views {
+  position: relative;
+}
+
+/* SearchView: keep the Hark search field while using a real <input>. */
+.search input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: 0;
+  outline: 0;
+  color: var(--ink);
+  font: 700 15px 'Nunito', sans-serif;
+}
+
+.search input::placeholder {
+  color: var(--dim);
+  opacity: 1;
+}
+
+.search-clr {
+  flex: none;
+  background: none;
+  border: 0;
+  padding: 2px;
+  color: var(--muted);
+  cursor: pointer;
+  font-weight: 900;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.search-clr:hover {
+  color: var(--red);
+}
+
+.search-clr:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Settings: avatar colour panel (expands from the "Foto e colore avatar" row) */
+.i7panel {
+  background: var(--card);
+  border: 2px solid var(--line);
+  border-radius: 20px;
+  padding: 14px 16px 12px;
+  animation: i7in 0.35s both;
+}
+
+.i7panel-t {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.i7colors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.i7colors .swatch {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 2.5px solid var(--ink);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--ink);
+  transition: transform 0.15s cubic-bezier(0.2, 1.2, 0.4, 1), box-shadow 0.15s;
+}
+
+.i7colors .swatch:hover {
+  transform: translateY(-2px) scale(1.06);
+  box-shadow: 3px 4px 0 var(--ink);
+}
+
+.i7colors .swatch:active {
+  transform: translateY(1px) scale(0.96);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
+.i7colors .swatch.on {
+  transform: scale(1.12);
+  outline: 2.5px solid var(--red);
+  outline-offset: 3px;
+}
+
+.i7colors .swatch:focus-visible {
+  outline: 2.5px solid var(--red);
+  outline-offset: 3px;
+}
+
+.i7panel-hint {
+  margin-top: 12px;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+/* React Modals styling compatible with Hark theme */
+.modal-dim {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 7, 20, 0.75);
+  backdrop-filter: blur(4px);
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: in 0.2s ease;
+}
+
+.modal-card {
+  background: var(--bg);
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: 6px 6px 0 var(--ink);
+  overflow: hidden;
+  position: relative;
+  animation: pop 0.3s cubic-bezier(0.2, 1.2, 0.4, 1) both;
+}
+
+.modal-hdr {
+  background: var(--card);
+  padding: 14px 18px;
+  border-bottom: 2.5px solid var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--display);
+  font-size: 18px;
+  color: var(--ink);
+}
+
+.modal-hdr.danger {
+  background: var(--red);
+  color: var(--bg);
+  border-bottom-color: var(--ink);
+}
+
+.modal-body {
+  padding: 18px;
+}
+
+/* Toast Floating Comic Bubble */
+.toast-bubble {
+  position: fixed;
+  bottom: 98px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: var(--bg);
+  border: 2.5px solid var(--ink);
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-family: var(--display);
+  font-size: 13.5px;
+  letter-spacing: 0.5px;
+  z-index: 2000;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.35);
+  animation: toastpop 0.25s cubic-bezier(0.2, 1.2, 0.4, 1) both;
+  pointer-events: none;
+  max-width: calc(100vw - 40px);
+  text-align: center;
+  white-space: normal;
+}
+
+@keyframes toastpop {
+  from { opacity: 0; transform: translate(-50%, 10px) scale(0.98); }
+  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
