@@ -183,9 +183,10 @@ function TrendCard({ manga, idx, library, onOpenPreview, onMangaAdded, onMangaSa
           created_at: new Date().toISOString(),
         };
       } else {
-        created = await addMangaFromPreview(manga, user.id, library);
-        await upd('library', `id=eq.${created.id}`, { status: dbStatus });
-        created = { ...created, status: dbStatus };
+        created = await addMangaFromPreview(manga, user.id, library, {
+          status: dbStatus,
+          onTotals: updated => onMangaSaved?.(updated),
+        });
       }
       setAdded(created);
       undoAfterAdd.current = true;

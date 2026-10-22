@@ -3,6 +3,9 @@ export const ANILIST_FIELDS = `title{romaji english}coverImage{large}genres chap
 
 const ANILIST_TIMEOUT_MS = 6000;
 const KITSU_TIMEOUT_MS = 8000;
+// Totals are a nice-to-have enrichment. Keep every provider on a short leash so
+// one slow API can never hold up adding a manga to the library.
+const TOTALS_TIMEOUT_MS = 2500;
 
 async function timedFetch(url, options = {}, timeoutMs = 8000) {
   const controller = new AbortController();
@@ -47,7 +50,11 @@ export function mapAniList(m) {
 
 export async function mangadexLookup(title) {
   try {
-    const res = await fetch(`https://api.mangadex.org/manga?title=${encodeURIComponent(title)}&limit=1&order[relevance]=desc`);
+    const res = await timedFetch(
+      `https://api.mangadex.org/manga?title=${encodeURIComponent(title)}&limit=1&order[relevance]=desc`,
+      {},
+      TOTALS_TIMEOUT_MS
+    );
     if (!res.ok) return { chapters: null, volumes: null };
     const d = await res.json();
     const m = d.data?.[0]?.attributes;
@@ -65,7 +72,11 @@ export async function mangadexLookup(title) {
 
 export async function kitsuLookup(title) {
   try {
-    const res = await fetch(`https://kitsu.io/api/edge/manga?filter[text]=${encodeURIComponent(title)}&page[limit]=1`);
+    const res = await timedFetch(
+      `https://kitsu.io/api/edge/manga?filter[text]=${encodeURIComponent(title)}&page[limit]=1`,
+      {},
+      TOTALS_TIMEOUT_MS
+    );
     if (!res.ok) return { chapters: null, volumes: null };
     const d = await res.json();
     const a = d.data?.[0]?.attributes;
@@ -81,7 +92,11 @@ export async function kitsuLookup(title) {
 
 export async function jikanLookup(title) {
   try {
-    const res = await fetch(`https://api.jikan.moe/v4/manga?q=${encodeURIComponent(title)}&limit=1`);
+    const res = await timedFetch(
+      `https://api.jikan.moe/v4/manga?q=${encodeURIComponent(title)}&limit=1`,
+      {},
+      TOTALS_TIMEOUT_MS
+    );
     if (!res.ok) return { chapters: null, volumes: null };
     const d = await res.json();
     const a = d.data?.[0];
