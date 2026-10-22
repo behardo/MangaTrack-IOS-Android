@@ -76,8 +76,14 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [toastText]);
 
-  // Handle Tab Switch (Hark exact behavior: scroll to top on views container)
+  // Handle Tab Switch (Hark exact behavior: scroll to top on views container).
+  // A tab tap must always land on that tab, even when a detail page, preview
+  // sheet or another modal is currently layered above the views.
   const handleTabChange = (newTab) => {
+    setSelectedManga(null);
+    setPreviewManga(null);
+    setRecommendData(null);
+    setIsDeleteOpen(false);
     setActiveTab(newTab);
     if (viewsRef.current) {
       viewsRef.current.scrollTop = 0;
