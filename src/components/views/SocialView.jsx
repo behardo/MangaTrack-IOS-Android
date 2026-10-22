@@ -280,6 +280,8 @@ export default function SocialView({ isActive, library = [], onOpenPreview, onOp
   const [pageTurning, setPageTurning] = useState(false);
   const forYouList = forYouDecks[forYouIndex] || [];
   const [favOverrides, setFavOverrides] = useState({});
+  const [recBusy, setRecBusy] = useState(null);
+  const recBusyRef = useRef(false);
   const feedGroups = useMemo(() => groupFeed(feed), [feed]);
 
   // v45 L2 — sliding user-library overlay
@@ -630,30 +632,64 @@ export default function SocialView({ isActive, library = [], onOpenPreview, onOp
   };
 
   const handleAddRecToLib = async (rec) => {
+    if (recBusyRef.current) return;
+    recBusyRef.current = true;
+    setRecBusy({ id: rec.id, action: 'add' });
     try {
-      const mangaPreview = {
-        title: rec.manga_title,
-        images: { jpg: { image_url: rec.manga_cover } },
-        genres: [{ name: 'Manga' }]
-      };
-      await addMangaFromPreview(mangaPreview, currentUserId, library);
+      const alreadyOwned = library.some(entry => entry.title === rec.manga_title);
+
+      if (previewMode) {
+        setRecs(prev => prev.filter(item => item.id !== rec.id));
+        onToast?.(
+          alreadyOwned
+            ? `"${rec.manga_title}" è già nella tua libreria`
+            : `"${rec.manga_title}" aggiunto alla tua libreria!`
+        );
+        return;
+      }
+
+      if (!alreadyOwned) {
+        const mangaPreview = {
+          title: rec.manga_title,
+          images: { jpg: { image_url: rec.manga_cover } },
+          genres: [{ name: 'Manga' }]
+        };
+        const created = await addMangaFromPreview(mangaPreview, currentUserId, library);
+        onMangaAdded?.(created);
+      }
+
       await del('recommendations', `id=eq.${rec.id}`);
-      setRecs(prev => prev.filter(r => r.id !== rec.id));
-      onToast?.(`"${rec.manga_title}" aggiunto alla tua libreria!`);
+      setRecs(prev => prev.filter(item => item.id !== rec.id));
+      onToast?.(
+        alreadyOwned
+          ? `"${rec.manga_title}" è già nella tua libreria`
+          : `"${rec.manga_title}" aggiunto alla tua libreria!`
+      );
       onRefreshRecsCount?.();
     } catch (err) {
       onToast?.(err.message || 'Errore');
+    } finally {
+      recBusyRef.current = false;
+      setRecBusy(null);
     }
   };
 
   const handleDismissRec = async (id) => {
+    if (recBusyRef.current) return;
+    recBusyRef.current = true;
+    setRecBusy({ id, action: 'ignore' });
     try {
-      await del('recommendations', `id=eq.${id}`);
-      setRecs(prev => prev.filter(r => r.id !== id));
+      if (!previewMode) {
+        await del('recommendations', `id=eq.${id}`);
+      }
+      setRecs(prev => prev.filter(rec => rec.id !== id));
       onToast?.('Consiglio rimosso');
-      onRefreshRecsCount?.();
+      if (!previewMode) onRefreshRecsCount?.();
     } catch (err) {
       onToast?.('Errore rimozione');
+    } finally {
+      recBusyRef.current = false;
+      setRecBusy(null);
     }
   };
 
@@ -1349,8 +1385,27 @@ export default function SocialView({ isActive, library = [], onOpenPreview, onOp
                 {r.message && <div className="q">“{r.message}”</div>}
                 <div className="w">— @{r.fromUser?.username || 'amico'}</div>
                 <div className="bt">
-                  <span className="a" onClick={() => handleAddRecToLib(r)}>+ Aggiungi</span>
-                  <span onClick={() => handleDismissRec(r.id)}>Ignora</span>
+                  <button
+                    type="button"
+                    className="a"
+                    disabled={Boolean(recBusy)}
+                    aria-busy={recBusy?.id === r.id && recBusy.action === 'add'}
+                    onClick={() => handleAddRecToLib(r)}
+                  >
+                    {recBusy?.id === r.id && recBusy.action === 'add'
+                      ? 'Aggiungo…'
+                      : '+ Aggiungi'}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={Boolean(recBusy)}
+                    aria-busy={recBusy?.id === r.id && recBusy.action === 'ignore'}
+                    onClick={() => handleDismissRec(r.id)}
+                  >
+                    {recBusy?.id === r.id && recBusy.action === 'ignore'
+                      ? 'Ignoro…'
+                      : 'Ignora'}
+                  </button>
                 </div>
               </div>
             </div>

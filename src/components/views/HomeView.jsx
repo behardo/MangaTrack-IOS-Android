@@ -78,7 +78,12 @@ export default function HomeView({ isActive, library = [], username, onSelectMan
           <span className="D">{completed}</span>
           <span className="t-lbl">completati</span>
           <span className="sp" />
-          <span className="D">♥{favs.length}</span>
+          <span className="D hfav">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 3h12v18l-6-4-6 4z" />
+            </svg>
+            {favs.length}
+          </span>
           <span className="t-lbl">preferiti</span>
         </div>
       </div>

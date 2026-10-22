@@ -356,3 +356,15 @@
 .sg1 .ad{flex:none;margin-top:10px;border:2.5px dashed var(--red);border-radius:8px;height:50px;display:grid;place-items:center;color:var(--red);font-family:var(--display);font-size:14px;cursor:pointer}
 .sg1-empty{font:800 12px 'Nunito',sans-serif;opacity:.8;padding:4px 2px 8px}
 @media (prefers-reduced-motion:reduce){.sg1 .ts{animation:none}.sg1 .tb{transition:none}}
+
+/* ===== v56: Home favourites stat (MangaTrack bookmark, no heart emoji) ===== */
+.tav .p4 .hfav{display:inline-flex;align-items:center;gap:4px}
+.tav .p4 .hfav svg{width:19px;height:19px;fill:var(--red);stroke:var(--ink);stroke-width:2.4;stroke-linejoin:round;transform:rotate(-7deg)}
+
+/* ===== v56: Consigli card actions ===== */
+.c4 .pn .bt{align-items:stretch}
+.c4 .pn .bt button{flex:1;min-width:0;height:30px;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);border-radius:3px;font-family:var(--display);font-size:11.5px;line-height:1;letter-spacing:.02em;white-space:nowrap;padding:0 6px;cursor:pointer;color:var(--bg);background:transparent;transition:transform .15s,opacity .2s;touch-action:manipulation}
+.c4 .pn .bt button.a{background:var(--bg);color:var(--ink)}
+.c4 .pn .bt button:active:not(:disabled){transform:translateY(1px)}
+.c4 .pn .bt button:disabled{opacity:.5;cursor:default}
+.c4 .pn .bt button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
