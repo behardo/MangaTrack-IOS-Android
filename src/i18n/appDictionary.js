@@ -233,6 +233,8 @@ export const APP_DICT = {
   "Tocca ✎ sulla copertina per cambiare la foto.": "Tap ✎ on the cover to change the photo.",
   "Carica una foto dalla copertina con ✎.": "Upload a photo from the cover with ✎.",
   "Aggiunto!": "Added!",
+  "Scegli!": "Choose!",
+  "un attimo…": "one moment…",
   "in quale scaffale?": "which shelf?",
   "Prossimo ›": "Next ›",
   "✓ Aggiunto": "✓ Added",

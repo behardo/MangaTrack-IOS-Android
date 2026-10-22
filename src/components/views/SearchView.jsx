@@ -72,15 +72,53 @@ function TrendCard({ manga, idx, library, onOpenPreview, onMangaAdded, onMangaSa
 
   const existing = library.find(entry => entry.title === title);
   const [flipped, setFlipped] = useState(false);
+  const [settled, setSettled] = useState(false);
   const [shelf, setShelf] = useState('read');
   const [added, setAdded] = useState(null);
   const [busy, setBusy] = useState(false);
   const undoAfterAdd = useRef(false);
+  const flipBackTimer = useRef(null);
+  const shelfLabel = SHELVES.find(option => option.key === shelf)?.label || SHELVES[0].label;
 
   const alreadyInLibrary = Boolean(existing) || Boolean(added);
 
+  const clearFlipBack = () => {
+    if (flipBackTimer.current) {
+      clearTimeout(flipBackTimer.current);
+      flipBackTimer.current = null;
+    }
+  };
+
+  // After a successful add the back face has done its job. Return to the front
+  // so the card never stays stuck flipped; the arrow stays usable in the short
+  // window before this fires, and the front check opens the full preview.
+  const queueFlipBack = () => {
+    clearFlipBack();
+    flipBackTimer.current = setTimeout(() => {
+      flipBackTimer.current = null;
+      setFlipped(false);
+    }, 1100);
+  };
+
+  // Once the 3D flip has finished, drop the transforms entirely. Safari can
+  // route taps on a transformed back face to the hidden front card, so the
+  // settled back face is a plain 2D layer with normal hit-testing.
+  useEffect(() => {
+    if (!flipped) {
+      setSettled(false);
+      return undefined;
+    }
+    const id = setTimeout(() => setSettled(true), 720);
+    return () => clearTimeout(id);
+  }, [flipped]);
+
+  useEffect(() => () => {
+    if (flipBackTimer.current) clearTimeout(flipBackTimer.current);
+  }, []);
+
   const handleFrontAdd = event => {
     event.stopPropagation();
+    clearFlipBack();
     if (alreadyInLibrary) {
       onOpenPreview?.(manga);
       return;
@@ -92,6 +130,7 @@ function TrendCard({ manga, idx, library, onOpenPreview, onMangaAdded, onMangaSa
     event.stopPropagation();
     setShelf(nextShelf.key);
     if (busy) return;
+    clearFlipBack();
 
     const dbStatus = nextShelf.db;
 
@@ -111,6 +150,7 @@ function TrendCard({ manga, idx, library, onOpenPreview, onMangaAdded, onMangaSa
             ? 'Aggiunto ai manga in lettura'
             : 'Aggiunto ai manga da leggere'
         );
+        queueFlipBack();
       } catch (err) {
         onToast?.('Errore: ' + err.message);
       } finally {
@@ -151,6 +191,7 @@ function TrendCard({ manga, idx, library, onOpenPreview, onMangaAdded, onMangaSa
       undoAfterAdd.current = true;
       onMangaAdded?.(created);
       onToast?.(`"${title}" aggiunto alla libreria!`);
+      queueFlipBack();
     } catch (err) {
       onToast?.(err.message || 'Errore nell\'aggiunta');
     } finally {
@@ -160,6 +201,7 @@ function TrendCard({ manga, idx, library, onOpenPreview, onMangaAdded, onMangaSa
 
   const handleUndo = async event => {
     event.stopPropagation();
+    clearFlipBack();
     if (busy) return;
     if (added && undoAfterAdd.current) {
       setBusy(true);
@@ -180,12 +222,13 @@ function TrendCard({ manga, idx, library, onOpenPreview, onMangaAdded, onMangaSa
   };
 
   return (
-    <div className={`fl4 ${flipped ? 'on' : ''}`}>
+    <div className={`fl4 ${flipped ? 'on' : ''} ${settled && flipped ? 'settled' : ''}`}>
       <div className="in4">
         <div
           className="card trend"
           onClick={() => onOpenPreview?.(manga)}
           style={{ cursor: 'pointer' }}
+          aria-hidden={flipped}
         >
           <div className="rank">{idx + 1}</div>
           {image ? (
@@ -205,45 +248,57 @@ function TrendCard({ manga, idx, library, onOpenPreview, onMangaAdded, onMangaSa
             title={alreadyInLibrary ? 'Già in libreria' : 'Aggiungi'}
             onClick={handleFrontAdd}
             role="button"
-            tabIndex={0}
+            tabIndex={flipped ? -1 : 0}
             onKeyDown={event => {
-              if (event.key === 'Enter' || event.key === ' ') handleFrontAdd(event);
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                handleFrontAdd(event);
+              }
             }}
           >
             {alreadyInLibrary ? '✓' : '+'}
           </div>
         </div>
 
-        <div className="bk4" onClick={event => event.stopPropagation()}>
+        <div
+          className="bk4"
+          onClick={event => event.stopPropagation()}
+          aria-hidden={!flipped}
+          aria-busy={busy}
+        >
           {image ? <img src={image} alt="" /> : null}
           <div>
-            <div className="D">{busy ? 'Aggiungo…' : 'Aggiunto!'}</div>
-            <small>in quale scaffale?</small>
+            <div className="D">{busy ? 'Aggiungo…' : added ? 'Aggiunto!' : 'Scegli!'}</div>
+            <small>{busy ? 'un attimo…' : added ? shelfLabel : 'in quale scaffale?'}</small>
           </div>
           <div className="ch4">
             {SHELVES.map(option => (
-              <span
+              <button
                 key={option.key}
+                type="button"
                 className={shelf === option.key ? 'on' : ''}
                 onClick={event => handleShelf(option, event)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={event => {
-                  if (event.key === 'Enter' || event.key === ' ') handleShelf(option, event);
-                }}
+                disabled={busy}
+                tabIndex={flipped ? 0 : -1}
+                aria-pressed={shelf === option.key}
               >
                 {option.label}
-              </span>
+              </button>
             ))}
           </div>
           <button
             type="button"
             className="un4"
             aria-label="Annulla"
+            title="Annulla"
             onClick={handleUndo}
             disabled={busy}
+            tabIndex={flipped ? 0 : -1}
           >
-            ↶
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M9 14 4 9l5-5" />
+              <path d="M4 9h9a6 6 0 0 1 0 12h-1" />
+            </svg>
           </button>
         </div>
       </div>

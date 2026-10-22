@@ -50,16 +50,30 @@
 .fl4 .in4{position:relative;transition:transform .7s cubic-bezier(.3,1.3,.5,1);transform-style:preserve-3d}
 .fl4.on .in4{transform:rotateX(180deg)}
 .fl4 .trend{margin:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
-.fl4 .bk4{position:absolute;inset:0;transform:rotateX(180deg);backface-visibility:hidden;-webkit-backface-visibility:hidden;background:var(--red);border:2.5px solid var(--ink);border-radius:22px;display:flex;align-items:center;gap:12px;padding:10px 14px;overflow:hidden}
+.fl4 .bk4{position:absolute;inset:0;transform:rotateX(180deg);backface-visibility:hidden;-webkit-backface-visibility:hidden;background:var(--red);border:2.5px solid var(--ink);border-radius:22px;display:flex;align-items:center;gap:12px;padding:10px 14px;overflow:hidden;pointer-events:none}
+/* Safari's 3D hit-testing can route taps on the flipped face to the hidden
+   front card. Gate pointer events explicitly on the face that is visible. */
+.fl4.on .trend{pointer-events:none}
+.fl4.on .bk4{pointer-events:auto}
+/* Drop preserve-3d hit-testing as soon as the flip animation ends. */
+.fl4.on.settled .in4{transform:none;transition:none}
+.fl4.on.settled .trend{visibility:hidden}
+.fl4.on.settled .bk4{transform:none}
 .fl4 .bk4::before{content:"";position:absolute;inset:0;background:var(--ht)}
 .fl4 .bk4>*{position:relative}
 .fl4 .bk4 img{width:44px;height:62px;border-radius:4px;border:2px solid var(--ink);object-fit:cover}
 .fl4 .bk4 .D{font-family:var(--display);font-size:20px;line-height:1}
 .fl4 .bk4 small{display:block;font-weight:800;font-size:11.5px;color:#ffd8dc;margin-top:3px}
 .fl4 .ch4{margin-left:auto;display:flex;flex-direction:column;gap:5px}
-.fl4 .ch4 span{background:var(--bg);font-size:11px;font-weight:900;padding:4px 9px;border-radius:10px;cursor:pointer;border:1.5px solid transparent;text-align:center}
-.fl4 .ch4 span.on{border-color:var(--ink);background:var(--ink);color:var(--bg)}
-.fl4 .un4{width:32px;height:32px;border-radius:50%;background:var(--green);border:2px solid var(--ink);color:var(--bg);font-weight:900;cursor:pointer;flex:none;font-size:15px}
+.fl4 .ch4 button{appearance:none;-webkit-appearance:none;background:var(--bg);color:var(--ink);font-family:inherit;font-size:11px;font-weight:900;line-height:1.2;padding:5px 9px;min-height:26px;border-radius:10px;cursor:pointer;border:1.5px solid transparent;text-align:center;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.fl4 .ch4 button.on{border-color:var(--ink);background:var(--ink);color:var(--bg)}
+.fl4 .ch4 button:active{transform:translateY(1px)}
+.fl4 .ch4 button:focus-visible{outline:2px solid var(--bg);outline-offset:2px}
+.fl4 .ch4 button:disabled{opacity:.65;cursor:wait}
+.fl4 .un4{width:32px;height:32px;border-radius:50%;background:var(--green);border:2px solid var(--ink);color:var(--bg);cursor:pointer;flex:none;display:grid;place-items:center;padding:0;line-height:1;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.fl4 .un4 svg{display:block;width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.fl4 .un4:active{transform:translateY(1px)}
+.fl4 .un4:disabled{opacity:.55;cursor:wait}
 /* ===== v45: M3 deck nel feed ===== */
 .dk3{position:relative;height:212px;display:flex;justify-content:center;margin-top:10px;touch-action:pan-y;cursor:grab}
 .dk3 .it{position:absolute;top:6px;width:120px;transition:all .5s cubic-bezier(.3,1.3,.5,1);transform-origin:50% 120%}
