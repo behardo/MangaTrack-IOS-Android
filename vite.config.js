@@ -1,5 +1,5 @@
 import { fileURLToPath } from 'node:url';
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
 const previewDataStub = fileURLToPath(
@@ -24,9 +24,19 @@ function productionPreviewStub() {
   };
 }
 
-export default defineConfig({
-  plugins: [react(), productionPreviewStub()],
-  server: {
-    port: 3000
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), 'VITE_');
+  if (!env.VITE_SUPABASE_URL || !env.VITE_SUPABASE_ANON_KEY) {
+    throw new Error(
+      'Missing Supabase configuration: create .env with VITE_SUPABASE_URL and ' +
+      'VITE_SUPABASE_ANON_KEY, or set them in your hosting project (e.g. Vercel).'
+    );
   }
+
+  return {
+    plugins: [react(), productionPreviewStub()],
+    server: {
+      port: 3000
+    }
+  };
 });
