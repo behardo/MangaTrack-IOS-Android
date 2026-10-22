@@ -762,7 +762,7 @@ h2.title span{color:var(--red)}
 .nxrow{display:flex;flex-direction:column;gap:4px;margin-top:auto}
 .nxrow div{display:flex;justify-content:space-between;font-size:12.5px;font-weight:800;color:var(--muted);border-bottom:2px dashed var(--line);padding-bottom:3px}
 .nxrow b{color:var(--ink);font-family:var(--display);font-weight:400}
-.nxgen{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:14px -18px 0;padding:2px 18px}
+.nxgen{display:flex;flex-wrap:wrap;gap:6px;overflow:visible;margin:14px 0 0;padding:2px 0}
 .nxgen span{flex:none;font-weight:900;font-size:11.5px;padding:5px 11px;border:2px solid var(--line);border-radius:3px;transform:rotate(-1.5deg)}
 .nxgen span:nth-child(even){transform:rotate(1.5deg)}
 .nxd{position:relative;margin-top:24px;border-left:4px solid var(--red);padding:4px 0 0 14px}
