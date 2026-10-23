@@ -495,9 +495,9 @@ export default function SearchView({
         )}
       </div>
 
-      {/* Recent Searches — Hark `.rr3` list */}
-      {!query && (
-        <div className={`rr3 ${recent.length === 0 ? 'none' : ''}`}>
+      {/* Recent Searches — Hark `.rr3` list, only once there is something to show */}
+      {!query && recent.length > 0 && (
+        <div className="rr3">
           <div className="rr3h">
             <div className="sec">Ricerche recenti</div>
             <button type="button" className="rr3clr" onClick={clearRecent}>
@@ -573,7 +573,6 @@ export default function SearchView({
               );
             })}
           </div>
-          <div className="rr3e">Nessuna ricerca recente.</div>
           <div className="rr3src">
             Fonte <span><i />AniList · live</span>
           </div>

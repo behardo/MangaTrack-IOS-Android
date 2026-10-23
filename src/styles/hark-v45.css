@@ -335,7 +335,6 @@
 .rr3f{width:30px;height:30px;border-radius:4px;border:2px solid var(--line);display:grid;place-items:center;color:var(--muted);flex:none}
 .rr3x{width:30px;height:30px;display:grid;place-items:center;color:var(--dim);font:900 13px 'Nunito',sans-serif;flex:none}
 .rr3it.gone{max-height:0;padding:0;border:0;opacity:0}
-.rr3e{display:none;font:700 12.5px 'Nunito',sans-serif;color:var(--dim);padding:10px 0}.rr3.none .rr3e{display:block}.rr3.none .rr3clr{visibility:hidden}
 .rr3src{margin-top:12px;display:flex;align-items:center;gap:8px;font:800 11px 'Nunito',sans-serif;color:var(--dim)}
 .rr3src span{display:inline-flex;align-items:center;gap:5px;background:var(--card);border:1.5px solid var(--line);border-radius:4px;padding:3px 8px;color:var(--muted)}
 .rr3src i{width:6px;height:6px;border-radius:50%;background:var(--green);animation:rrlv 1.4s infinite}
