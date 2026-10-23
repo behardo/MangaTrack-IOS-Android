@@ -172,9 +172,10 @@ export function getAppLanguage() {
 export function setAppLanguage(next, { animate = true } = {}) {
   const value = next === 'en' ? 'en' : 'it';
   if (value === lang) {
-    // Still re-apply: the caller may be toggling right after new content
-    // mounted, before the observer had a chance to translate it.
-    applyAppLanguage();
+    // Italian is the source language: there is nothing to rewrite. English
+    // still needs a pass, because new content may have mounted before the
+    // observer had a chance to translate it.
+    if (lang === 'en') applyAppLanguage();
     return lang;
   }
 
@@ -201,6 +202,11 @@ export function installAppLanguage() {
   installed = true;
 
   observer = new MutationObserver((mutations) => {
+    // Italian is the source language; React's own text already is the final
+    // copy. Walking every mutation would only burn main-thread time while the
+    // splash is animating.
+    if (lang !== 'en') return;
+
     for (const mutation of mutations) {
       if (mutation.type === 'characterData') {
         translateTextNode(mutation.target);
@@ -221,7 +227,21 @@ export function installAppLanguage() {
   });
 
   // React StrictMode mounts effects twice in development; avoid duplicating.
-  applyAppLanguage();
+  document.documentElement.lang = lang;
+
+  // For Italian there is nothing to translate. For English, wait for an idle
+  // slot so the first splash frames are not blocked by a full-document walk
+  // (the opaque splash hides the untranslated app until it fades out).
+  if (lang === 'en') {
+    const translateWhenIdle = () => applyAppLanguage();
+    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(translateWhenIdle, { timeout: 800 });
+    } else {
+      // Safari has no requestIdleCallback: let the splash paint its first
+      // frames before doing the one-off English translation.
+      setTimeout(translateWhenIdle, 120);
+    }
+  }
 
   if (typeof window !== 'undefined') {
     window.addEventListener('storage', (event) => {

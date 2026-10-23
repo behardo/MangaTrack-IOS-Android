@@ -677,7 +677,7 @@ h2.title span{color:var(--red)}
 .fs.first{height:92px}.fs.first .n{color:var(--red);-webkit-text-stroke:1.5px var(--ink)}
 
 .ai{position:relative;aspect-ratio:1/1}
-.ai img{position:absolute;display:block;pointer-events:none;user-select:none}
+.ai img{position:absolute;display:block;height:auto;pointer-events:none;user-select:none;-webkit-backface-visibility:hidden;backface-visibility:hidden}
 .ai .bd{opacity:0;transform:scale(.2)}
 .ai.aigo .bd{animation:aiD .28s cubic-bezier(.3,1.8,.5,1) forwards}
 @keyframes aiD{to{opacity:1;transform:none}}
@@ -685,16 +685,23 @@ h2.title span{color:var(--red)}
 .ai.aigo .lt{animation:aiL .5s cubic-bezier(.25,1.6,.5,1) forwards,aiW .5s ease-in-out}
 @keyframes aiL{0%{opacity:0;transform:translateY(-55%) rotate(-18deg) scale(.6)}100%{opacity:1;transform:none}}
 @keyframes aiW{50%{transform:translateY(-9%) rotate(4deg)}}
-.ai .dg{position:absolute;inset:0;transform-origin:61.368% 86.031%}
+.ai .dg{position:absolute;inset:0;transform-origin:61.368% 86.031%;will-change:transform;-webkit-backface-visibility:hidden;backface-visibility:hidden}
 .ai.aigo .dg{animation:aiS 6s 2.1s linear infinite}
-@keyframes aiS{to{transform:rotate(360deg)}}
+@keyframes aiS{from{transform:rotate(0deg) translateZ(0)}to{transform:rotate(360deg) translateZ(0)}}
 .ai .ltg{position:absolute}.ai .ltg img{position:absolute;display:block}
 
-.spl{position:absolute;inset:0;z-index:999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .45s,transform .45s}
-.spl.out{opacity:0;transform:scale(1.08);pointer-events:none}
+.spl{position:absolute;inset:0;z-index:999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .45s ease}
+.spl.out{opacity:0;pointer-events:none}
+.spl.out .dg{animation-play-state:paused}
 .spl .ai{width:300px}
 .spl .ld{margin-top:6px;font-weight:800;font-size:12.5px;color:var(--muted);letter-spacing:.04em;opacity:0;animation:splE2 .4s 1.7s forwards}
 @keyframes splE2{to{opacity:1}}
+
+@media (prefers-reduced-motion: reduce){
+  .ai.aigo .bd,.ai.aigo .lt,.ai.aigo .dg,.spl .ld{animation:none}
+  .ai .bd,.ai .lt,.spl .ld{opacity:1;transform:none}
+  .spl{transition:none}
+}
 
 .acts2 .hb{position:relative;width:38px;padding:0;display:grid;place-items:center;overflow:visible;transition:border-color .2s,background .2s}
 .acts2 .hb svg{width:19px;height:19px;fill:transparent;stroke:var(--muted);stroke-width:2.2;stroke-linejoin:round;transition:fill .2s,stroke .2s;overflow:visible}
