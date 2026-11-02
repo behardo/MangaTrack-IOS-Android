@@ -1,52 +1,181 @@
 # MangaTrack
 
-App React (Vite) per gestire la propria libreria manga, con ricerca AniList e funzioni social.
+Web app per tenere traccia della propria libreria manga: cosa sto leggendo, a che capitolo sono arrivato, cosa ho finito e cosa leggono gli amici.
 
-## Setup
+Progetto individuale (tesina) per il modulo di **Tecnologie Web**, AA 2026-27, UNIMORE.
+Autore: **Behar Myzyri**
+
+- App online: https://manga-track-ios.vercel.app
+- Presentazione: [`docs/MangaTrack_Behar_Myzyri.pdf`](docs/MangaTrack_Behar_Myzyri.pdf) (versione PowerPoint con demo video: [`docs/MangaTrack_Behar_Myzyri.pptx`](docs/MangaTrack_Behar_Myzyri.pptx))
+
+---
+
+## 1. Problema e obiettivo
+
+Chi legge manga li segue spesso su siti, app e formati diversi: volumi cartacei, capitoli settimanali e scan online. Il risultato è che si perde il punto in cui si era arrivati, non si sa quanti capitoli mancano e i consigli degli amici finiscono sparsi nelle chat.
+
+**Obiettivo:** un unico posto, accessibile dal browser (anche da telefono), in cui:
+
+- cercare un manga in un catalogo esterno e aggiungerlo alla propria libreria;
+- aggiornare lo stato di lettura (in lettura, completato, in pausa, abbandonato, da leggere) e il capitolo o volume raggiunto;
+- vedere i progressi e l'attività recente;
+- seguire altri utenti e consigliare loro dei titoli.
+
+### Requisiti funzionali principali
+
+| Area | Funzionalità |
+|---|---|
+| Account | Registrazione, login, sessione persistente con refresh del token, logout, eliminazione account |
+| Libreria | Aggiunta (C), lista e dettaglio (R), aggiornamento di stato, capitoli e volumi (U), rimozione (D) |
+| Catalogo | Ricerca e titoli di tendenza da API esterne, totale di capitoli e volumi |
+| Social | Follow e unfollow, consigli ad altri utenti (invio ed eliminazione), feed attività |
+| Profilo | Nome, bio e avatar (upload su Storage), lingua IT/EN |
+
+### Viste principali
+
+`AuthView` (accesso), `HomeView` (riepilogo e tendenze), `LibraryView` (libreria), `SearchView` (ricerca), `SocialView` (amici e consigli), `SettingsView` (profilo e lingua), più `DetailView` e le modali `PreviewSheet`, `RecommendModal` e `DeleteModal`.
+
+---
+
+## 2. Architettura
+
+```
+┌──────────────────────────────┐        ┌───────────────────────────────────────┐
+│  Browser – React 18 (SPA)    │        │  Supabase (backend as a service)      │
+│  Vite build, hosting Vercel  │  REST  │  • Auth (JWT, refresh token)          │
+│                              │───────▶│  • PostgREST → PostgreSQL + RLS       │
+│  src/api/supabase.js         │        │  • Storage (bucket avatars)           │
+│  (client REST q/ins/upd/del) │        └───────────────────────────────────────┘
+│                              │
+│                              │        ┌───────────────────────────────────────┐
+│  src/api/manga.js            │───────▶│  Vercel Serverless Function           │
+│                              │  GET   │  api/totals.js                        │
+│                              │        │  aggrega MangaDex + Kitsu + Jikan,    │
+│                              │        │  cache in memoria + cache CDN         │
+│                              │        └───────────────────────────────────────┘
+│                              │
+│                              │───────▶  AniList GraphQL (ricerca, tendenze)
+│                              │          └─ fallback: Kitsu REST
+└──────────────────────────────┘
+```
+
+### Backend
+
+Il backend è composto da due parti.
+
+1. **Supabase** gestisce dati, autenticazione e file:
+   - **PostgreSQL** con 5 tabelle relazionali (`profiles`, `library`, `activity`, `follows`, `recommendations`);
+   - **PostgREST** espone le tabelle come API REST (`GET`, `POST`, `PATCH`, `DELETE`);
+   - le **policy Row Level Security** fanno rispettare le regole di accesso nel database: il JWT dell'utente identifica chi fa la richiesta (`auth.uid()`) e ognuno può inserire, modificare o eliminare solo le righe che gli appartengono;
+   - **Auth** rilascia i JWT, che il client invia in ogni richiesta;
+   - **Storage** conserva gli avatar nel bucket `avatars`.
+2. **Funzione serverless Vercel** `api/totals.js` (`GET /api/totals?title=...`): interroga in parallelo MangaDex, Kitsu e Jikan con un timeout di 2,5 s ciascuno, tiene il totale più alto di capitoli e volumi, valida l'input (400 o 405) e mette in cache il risultato (in memoria e con `s-maxage` sulla CDN). In questo modo il browser fa una sola richiesta invece di tre e la logica di aggregazione sta in un punto solo. Se la funzione non risponde, per esempio con `npm run dev`, il client ripiega sulle chiamate dirette.
+
+### Modello dei dati
+
+| Tabella | Contenuto | Relazioni |
+|---|---|---|
+| `profiles` | username, bio, avatar_url, avatar_color | `id` = utente di Supabase Auth |
+| `library` | title, cover, genre, status, chapters / total_chapters, volumes / total_volumes, score, favourite, review | `user_id` → profiles |
+| `activity` | type, manga_title, manga_cover, details | `user_id` → profiles |
+| `follows` | chi segue chi | `follower_id`, `following_id` → profiles |
+| `recommendations` | titolo consigliato con messaggio | `from_id`, `to_id` → profiles |
+
+### Struttura del codice
+
+```
+api/totals.js            funzione serverless (Vercel)
+src/api/supabase.js      client REST scritto a mano: q / ins / upd / del
+src/api/library.js       CRUD della libreria + log attività
+src/api/social.js        follow e consigli
+src/api/storage.js       upload avatar e aggiornamento profilo
+src/api/manga.js         AniList / Kitsu / totali
+src/context/AuthContext.jsx  sessione, refresh token, eliminazione account
+src/i18n/                traduzione IT/EN a runtime
+src/components/views/    le viste dell'app
+src/components/modals/   finestre modali
+```
+
+---
+
+## 3. Stack e motivazione delle scelte
+
+| Scelta | Motivazione | Trade-off accettato |
+|---|---|---|
+| **React 18 + Vite 5** | Interfaccia a componenti con stato condiviso. Vite offre hot reload rapido e build ottimizzata. | Richiede uno step di build. |
+| **Nessun router** (navigazione a schede con stato) | L'app è una shell mobile a schede: con uno stato `view` in `App.jsx` non serve una libreria in più. | Le viste non hanno un URL proprio e non si può condividere un link a una schermata. |
+| **Supabase invece di Flask o Express** | PostgreSQL vero, autenticazione con JWT e Storage già pronti e gratuiti. Il tempo è andato su modello dei dati, policy RLS e integrazioni invece che su un server CRUD ripetitivo. | Le regole di business stanno nelle policy RLS e nel client più che in un server scritto a mano. Per la logica che non deve stare nel browser c'è la funzione serverless `api/totals.js`. |
+| **Client REST scritto a mano** invece dell'SDK `@supabase/supabase-js` | Circa 60 righe di `fetch` per vedere e controllare ogni richiesta HTTP (header `apikey` e `Authorization`, filtri PostgREST). Le dipendenze di runtime restano due: `react` e `react-dom`. | Funzioni come il realtime vanno implementate a parte. |
+| **AniList, con fallback su Kitsu** | AniList ha un'API GraphQL ricca e gratuita. Kitsu fa da riserva quando AniList non risponde (timeout di 6 s e 3 tentativi). | Dipendenza da servizi esterni con limiti di frequenza. |
+| **Aggiunta ottimistica** | Il manga compare subito in libreria; i totali arrivano dopo, in background. | In caso di errore va annullata l'aggiunta lato UI. |
+| **i18n con dizionario e `MutationObserver`** | Traduzione IT/EN di tutta l'interfaccia senza riscrivere i componenti; la lingua è salvata in `localStorage` (`mt-lang`). | Ogni nuova stringa va aggiunta al dizionario. |
+| **Vercel** | Deploy automatico da GitHub, hosting statico e funzioni serverless nello stesso progetto. | Le variabili `VITE_*` sono fissate al momento della build. |
+
+### Approfondimenti autonomi (non trattati a lezione)
+
+- Integrazione di più **API esterne** (GraphQL AniList, REST Kitsu, MangaDex, Jikan) con timeout tramite `AbortController`, tentativi ripetuti e fallback.
+- **Funzione serverless** Vercel con cache e aggregazione di più fonti.
+- **Supabase**: PostgREST, policy RLS, Auth con refresh token e Storage, usati tramite REST senza SDK.
+- **Internazionalizzazione a runtime** basata su `MutationObserver`.
+- Pipeline di **deploy** con controllo delle variabili d'ambiente in `vite.config.js`.
+
+---
+
+## 4. Installazione e avvio
+
+Requisiti: Node.js 18 o superiore e un progetto Supabase con le tabelle descritte sopra e le policy RLS attive.
 
 ```bash
+git clone <URL-del-repository>
+cd New-Manga-Track-OpenCode
 npm install
+cp .env.example .env      # inserisci VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY
+npm run dev               # http://localhost:3000
 ```
 
-Copia `.env.example` in `.env` e inserisci i valori del tuo progetto Supabase:
+| Comando | Cosa fa |
+|---|---|
+| `npm run dev` | Server di sviluppo (porta 3000). `/api/totals` non è attivo e il client usa le chiamate dirette. |
+| `npx vercel dev` | Avvia frontend e funzione serverless insieme, come in produzione. |
+| `npm run build` | Build di produzione in `dist/` (si ferma se mancano le variabili Supabase). |
+| `npm run preview` | Anteprima della build. |
 
-```bash
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-public-anon-key
-```
+In sviluppo, `?preview=app` avvia la shell con dati demo senza chiamate reali a Supabase, mentre `&lang=en` forza l'interfaccia in inglese.
 
-Il file `.env` è ignorato da Git: le credenziali restano solo in locale. Nel client va
-usata esclusivamente la chiave **anon** (pubblica, protetta dalle policy RLS).
-Non inserire mai una chiave `service_role` in questo progetto.
+Nel client va usata **solo la chiave anon** (pubblica, protetta dalle policy RLS). Il file `.env` è escluso da Git e la chiave `service_role` non va mai inserita nel progetto.
 
-## Comandi
+### Deploy su Vercel
 
-```bash
-npm run dev      # server di sviluppo (porta 3000)
-npm run build    # build di produzione in dist/
-npm run preview  # anteprima della build
-```
+1. Importa il repository su Vercel (preset **Vite**). La cartella `api/` viene pubblicata automaticamente come funzione serverless.
+2. Build command: `npm run build`. Output directory: `dist`.
+3. In **Settings → Environment Variables** aggiungi `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` per Production e Preview, poi rifai il deploy.
+4. Su Supabase, in **Authentication → URL Configuration**, imposta come Site URL e Redirect URL il dominio Vercel, così i link di conferma e di recupero password puntano all'app pubblicata.
 
-In sviluppo `?preview=app` avvia la shell con dati demo (nessuna chiamata reale a Supabase),
-mentre `&lang=en` forza l'interfaccia in inglese.
+---
 
-## Deploy su Vercel
+## 5. Limiti noti
 
-1. Importa il repository GitHub su Vercel (preset **Vite**).
-2. Build command: `npm run build` — Output directory: `dist`.
-3. In **Settings → Environment Variables** aggiungi, per Production e Preview:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-4. Fai un nuovo deploy: le variabili `VITE_*` vengono lette e incorporate al momento
-   della build, quindi una modifica richiede un redeploy.
+- Nessun test automatico: le verifiche sono state fatte a mano.
+- Se AniList e Kitsu sono entrambi irraggiungibili, la ricerca non restituisce risultati.
+- Serve la connessione: la libreria non è disponibile offline. Il file `public/sw.js` non è una cache: rimuove il service worker di una versione precedente dell'app.
+- Le viste non hanno un URL proprio, perché non c'è un router.
 
-La build fallisce volutamente con un messaggio esplicito se le due variabili mancano,
-così non viene pubblicata un'app senza backend.
+---
 
-Infine, nel dashboard Supabase vai in **Authentication → URL Configuration** e imposta:
+## 6. Progetto di partenza
 
-- **Site URL**: `https://<il-tuo-progetto>.vercel.app`
-- **Redirect URLs**: aggiungi lo stesso dominio (ed eventuale dominio personalizzato).
+MangaTrack è la riscrittura in React di una versione precedente dell'app scritta dallo stesso autore, una PWA con service worker di cache. Rispetto a quella versione sono stati aggiunti o rifatti:
+architettura a componenti React e Vite, client REST verso Supabase con autenticazione e refresh token, modello relazionale con 5 tabelle e RLS, funzioni social (follow, consigli e attività), fallback AniList → Kitsu, aggregazione dei totali tramite funzione serverless, traduzione IT/EN e deploy su Vercel.
 
-Serve per i link di conferma email e recupero password: senza questa configurazione i
-link nelle email puntano al vecchio indirizzo (spesso `localhost`).
+---
+
+## 7. Dichiarazione uso di AI
+
+Si dichiara che per la realizzazione del presente progetto software ci si è avvalsi dell'ausilio dei seguenti strumenti di Intelligenza Artificiale Generativa:
+
+- **OpenCode** (agente di programmazione AI): utilizzato come supporto alla scrittura e al refactoring del codice dei componenti React e del client API, e per individuare e correggere bug.
+- **Hark** (assistente AI): utilizzato per scrivere la funzione serverless `api/totals.js`, redigere questo README e preparare la presentazione (struttura delle slide, grafica, video demo).
+
+L'idea dell'applicazione, i requisiti, il modello dei dati, l'architettura del software e la logica di business rimangono interamente frutto dell'elaborazione originale dell'autore.
+
+L'autore dichiara di aver effettuato personalmente la verifica funzionale e di sicurezza del codice generato, assumendosi la piena e personale responsabilità del progetto presentato.

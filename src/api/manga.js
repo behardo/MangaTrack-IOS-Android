@@ -110,8 +110,24 @@ export async function jikanLookup(title) {
   }
 }
 
+/* Prima prova la funzione server /api/totals (Vercel), che aggrega le tre
+   fonti e mette in cache il risultato. Se non è disponibile (es. `npm run dev`
+   senza `vercel dev`) ripiega sulle chiamate dirette dal browser. */
+async function serverTotals(title) {
+  try {
+    const res = await timedFetch(`/api/totals?title=${encodeURIComponent(title)}`, {}, TOTALS_TIMEOUT_MS + 500);
+    if (!res.ok || !(res.headers.get("content-type") || "").includes("json")) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
 export async function totalsLookup(title, baseChapters = null, baseVolumes = null) {
-  const results = await Promise.all([
+  const server = await serverTotals(title);
+  const results = server
+    ? [server]
+    : await Promise.all([
     mangadexLookup(title),
     kitsuLookup(title),
     jikanLookup(title)
