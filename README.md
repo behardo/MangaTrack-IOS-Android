@@ -126,8 +126,8 @@ src/components/modals/   finestre modali
 Requisiti: Node.js 18 o superiore e un progetto Supabase con le tabelle descritte sopra e le policy RLS attive.
 
 ```bash
-git clone <URL-del-repository>
-cd New-Manga-Track-OpenCode
+git clone https://github.com/behardo/MangaTrack-IOS-Android.git
+cd MangaTrack-IOS-Android
 npm install
 cp .env.example .env      # inserisci VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY
 npm run dev               # http://localhost:3000
