@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { saveMangaDetail, deleteMangaFromLibrary } from '../../api/library';
+import { saveMangaDetail, deleteMangaFromLibrary, saveMangaCover } from '../../api/library';
 import { mangaInfo } from '../../api/manga';
 import Avatar from '../common/Avatar';
 
@@ -134,7 +134,13 @@ export default function DetailView({ manga, onClose, onSaveSuccess, onDeleteSucc
         if (!active || !info) return;
         if (!hasSynopsis && info.synopsis) setSynopsis(info.synopsis);
         if (!manga.cover && info.images?.jpg?.image_url) {
-          setCoverFallback(info.images.jpg.image_url);
+          const url = info.images.jpg.image_url;
+          setCoverFallback(url);
+          // Persist so the library grid heals too, but only for real rows.
+          if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(manga.id || ''))) {
+            saveMangaCover(manga.id, url);
+            onSaveSuccess?.({ id: manga.id, cover: url });
+          }
         }
       })
       .catch(() => {})

@@ -157,3 +157,16 @@ export async function deleteMangaFromLibrary(mangaId) {
   await del("library", `id=eq.${mangaId}`);
 }
 
+/**
+ * Best-effort cover backfill for rows saved before the social add resolved
+ * artwork. Called from the detail view the first time it finds an empty cover.
+ */
+export async function saveMangaCover(mangaId, cover) {
+  if (!mangaId || !cover) return;
+  try {
+    await upd("library", `id=eq.${mangaId}`, { cover });
+  } catch {
+    /* the detail view still shows the resolved cover */
+  }
+}
+
