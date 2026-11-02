@@ -1,22 +1,58 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { addMangaFromPreview } from '../../api/library';
+import { mangaInfo } from '../../api/manga';
 
 export default function PreviewSheet({ manga, library = [], onClose, onAddSuccess, onOpenDetail, onToast }) {
   const { user } = useAuth();
   const [expanded, setExpanded] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [meta, setMeta] = useState(null);
+  const [metaLoading, setMetaLoading] = useState(false);
 
   const title = manga?.title_english || manga?.title || 'Manga';
-  const cover = manga?.images?.jpg?.image_url || manga?.cover || '';
-  const score = manga?.score || (manga?.meanScore ? (manga.meanScore / 10).toFixed(1) : '–');
-  const chapters = manga?.chapters || '–';
-  const volumes = manga?.volumes || '–';
-  const type = manga?.type || 'Manga';
-  const genres = manga?.genres?.map(g => (typeof g === 'string' ? g : g.name)) || ['Manga'];
-  const synopsis = manga?.synopsis ? manga.synopsis.replace(/\[Written by MAL Rewrite\]/g, '').trim() : 'Nessuna sinossi disponibile.';
+  const cover = manga?.images?.jpg?.image_url || manga?.cover || meta?.images?.jpg?.image_url || '';
+  const score = manga?.score || meta?.score || (manga?.meanScore ? (manga.meanScore / 10).toFixed(1) : '–');
+  const chapters = manga?.chapters || meta?.chapters || '–';
+  const volumes = manga?.volumes || meta?.volumes || '–';
+  const type = manga?.type || meta?.type || 'Manga';
+  const genres = manga?.genres?.length
+    ? manga.genres.map(g => (typeof g === 'string' ? g : g.name))
+    : meta?.genres?.map(g => (typeof g === 'string' ? g : g.name)) || ['Manga'];
+  const rawSynopsis = (manga?.synopsis || meta?.synopsis || '').trim();
+  const synopsis = rawSynopsis
+    ? rawSynopsis.replace(/\[Written by MAL Rewrite\]/g, '').trim()
+    : metaLoading
+      ? 'Caricamento sinossi…'
+      : 'Nessuna sinossi disponibile.';
 
   const existingManga = library.find(m => m.title === title);
+
+  // Feed and recommendations open the sheet with only a title/cover, so the
+  // synopsis and the artwork are fetched on demand from AniList.
+  useEffect(() => {
+    setMeta(null);
+    if (!manga) {
+      setMetaLoading(false);
+      return undefined;
+    }
+
+    const hasSynopsis = Boolean(manga.synopsis && manga.synopsis.trim());
+    const hasCover = Boolean(manga.images?.jpg?.image_url || manga.cover);
+    if (hasSynopsis && hasCover) {
+      setMetaLoading(false);
+      return undefined;
+    }
+
+    let active = true;
+    setMetaLoading(true);
+    mangaInfo(manga.title_english || manga.title)
+      .then(info => { if (active) setMeta(info); })
+      .catch(() => {})
+      .finally(() => { if (active) setMetaLoading(false); });
+
+    return () => { active = false; };
+  }, [manga?.title, manga?.title_english, manga?.synopsis, manga?.cover, manga?.images?.jpg?.image_url]);
 
   // The sheet stays mounted between titles; never carry "Leggi tutto" or a
   // busy state from the previous manga into the next one.

@@ -3,7 +3,7 @@
  */
 
 import { q, ins, upd, del } from "./supabase";
-import { totalsLookup } from "./manga";
+import { totalsLookup, mangaInfo } from "./manga";
 
 /**
  * Fetch all manga entries for a user.
@@ -46,6 +46,15 @@ export async function addMangaFromPreview(previewManga, userId, currentLib = [],
     ? firstGenre
     : firstGenre?.name || "Action";
 
+  // Feed and recommendation entries only carry a title, so their cover can be
+  // empty. Resolve it once here: without this the row lands in the library
+  // (and in the activity feed) with no artwork at all.
+  let cover = previewManga.images?.jpg?.image_url || previewManga.cover || null;
+  if (!cover) {
+    const info = await mangaInfo(title);
+    cover = info?.images?.jpg?.image_url || null;
+  }
+
   const manga = {
     title,
     status,
@@ -55,7 +64,7 @@ export async function addMangaFromPreview(previewManga, userId, currentLib = [],
     total_volumes: totalVol,
     score: 0,
     genre,
-    cover: previewManga.images?.jpg?.image_url || null,
+    cover,
     favourite: false,
     review: "",
     user_id: userId

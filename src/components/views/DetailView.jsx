@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { saveMangaDetail, deleteMangaFromLibrary } from '../../api/library';
+import { mangaInfo } from '../../api/manga';
 import Avatar from '../common/Avatar';
 
 const STATUS_ICONS = {
@@ -63,6 +64,13 @@ export default function DetailView({ manga, onClose, onSaveSuccess, onDeleteSucc
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  // The library row has no synopsis column: fetch it from AniList by title the
+  // first time the detail opens. The same lookup supplies a cover for rows that
+  // were saved without artwork.
+  const [synopsis, setSynopsis] = useState('');
+  const [metaLoading, setMetaLoading] = useState(false);
+  const [coverFallback, setCoverFallback] = useState('');
+
   // Progress interactions ported from Hark: the pin flashes on every chapter
   // change, the stepper repeats while held, and the trail can be dragged.
   const [dragging, setDragging] = useState(false);
@@ -109,6 +117,31 @@ export default function DetailView({ manga, onClose, onSaveSuccess, onDeleteSucc
     clearTimeout(closeTimer.current);
     stopHold();
   }, [manga, stopHold]);
+
+  useEffect(() => {
+    let active = true;
+    setSynopsis(manga?.synopsis || '');
+    setCoverFallback('');
+    setMetaLoading(false);
+    if (!manga?.title) return undefined;
+
+    const hasSynopsis = Boolean(manga.synopsis && manga.synopsis.trim());
+    if (hasSynopsis && manga.cover) return undefined;
+
+    setMetaLoading(true);
+    mangaInfo(manga.title)
+      .then(info => {
+        if (!active || !info) return;
+        if (!hasSynopsis && info.synopsis) setSynopsis(info.synopsis);
+        if (!manga.cover && info.images?.jpg?.image_url) {
+          setCoverFallback(info.images.jpg.image_url);
+        }
+      })
+      .catch(() => {})
+      .finally(() => { if (active) setMetaLoading(false); });
+
+    return () => { active = false; };
+  }, [manga]);
 
   const handleStatusChange = (key) => {
     setStatusKey(key);
@@ -242,7 +275,7 @@ export default function DetailView({ manga, onClose, onSaveSuccess, onDeleteSucc
       <div className="scroll">
         {/* HERO CARD */}
         <div className="dhero ht">
-          <img id="dimg" src={manga?.cover || ''} alt="" />
+          <img id="dimg" src={manga?.cover || coverFallback || ''} alt="" />
           <div>
             <div className="t" id="dt">{manga?.title || ''}</div>
             <div className="g" id="dg">{manga?.genre || 'Manga'}</div>
@@ -251,6 +284,18 @@ export default function DetailView({ manga, onClose, onSaveSuccess, onDeleteSucc
             </div>
           </div>
           <div className="bub">Vol. {volumes}</div>
+        </div>
+
+        {/* TRAMA */}
+        <div className="dsec">
+          <div className="cap-t">Trama</div>
+          <div className="pnl" style={{ padding: '14px 16px' }}>
+            <p style={{ margin: 0, fontSize: 13, lineHeight: 1.55, fontWeight: 600, color: 'var(--ink)' }}>
+              {metaLoading && !synopsis
+                ? 'Caricamento…'
+                : synopsis || 'Nessuna sinossi disponibile.'}
+            </p>
+          </div>
         </div>
 
         {/* STATO LETTURA */}

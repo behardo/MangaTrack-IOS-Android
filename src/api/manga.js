@@ -33,6 +33,20 @@ export async function anilist(query, variables) {
   return data.data;
 }
 
+function cleanSynopsis(value) {
+  return (value || "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;|&apos;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&mdash;/g, "—")
+    .replace(/&ndash;/g, "–")
+    .replace(/&amp;/g, "&")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export function mapAniList(m) {
   return {
     title: m.title?.romaji || "",
@@ -43,7 +57,7 @@ export function mapAniList(m) {
     volumes: m.volumes ?? null,
     type: m.format ?? "MANGA",
     score: m.averageScore ? Math.round(m.averageScore) / 10 : null,
-    synopsis: m.description ? m.description.replace(/<[^>]+>/g, "") : "",
+    synopsis: cleanSynopsis(m.description),
     rank: null
   };
 }
@@ -149,6 +163,36 @@ export async function searchManga(query) {
     { s: query }
   );
   return (data.Page?.media || []).map(mapAniList);
+}
+
+/* AniList lookup by title for the places that only know a title: the social
+   feed and the recommendations copy just title/cover, and older library rows
+   may have been saved without a cover. Search returns several candidates (a
+   generic title like "Real" matches unrelated manga first), so prefer an exact
+   title match before falling back to AniList's own ranking. */
+export async function mangaInfo(title) {
+  const query = (title || "").trim();
+  if (!query) return null;
+
+  try {
+    const data = await anilist(
+      `query($s:String){Page(page:1,perPage:8){media(search:$s,type:MANGA,sort:SEARCH_MATCH){${ANILIST_FIELDS}}}}`,
+      { s: query }
+    );
+    const media = data.Page?.media || [];
+    if (!media.length) return null;
+
+    const normalize = value =>
+      (value || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    const wanted = normalize(query);
+    const best = media.find(m =>
+      normalize(m.title?.romaji) === wanted || normalize(m.title?.english) === wanted
+    ) || media[0];
+
+    return mapAniList(best);
+  } catch {
+    return null;
+  }
 }
 
 export function mapKitsu(item, categories) {
