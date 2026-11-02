@@ -281,7 +281,7 @@ export default function DetailView({ manga, onClose, onSaveSuccess, onDeleteSucc
       <div className="scroll">
         {/* HERO CARD */}
         <div className="dhero ht">
-          <img id="dimg" src={manga?.cover || coverFallback || ''} alt="" />
+          <img id="dimg" src={manga?.cover || coverFallback || ''} alt={manga?.title || 'Copertina manga'} />
           <div>
             <div className="t" id="dt">{manga?.title || ''}</div>
             <div className="g" id="dg">{manga?.genre || 'Manga'}</div>

@@ -267,7 +267,7 @@ function TrendCard({ manga, idx, library, onOpenPreview, onMangaAdded, onMangaSa
           aria-hidden={!flipped}
           aria-busy={busy}
         >
-          {image ? <img src={image} alt="" /> : null}
+          {image ? <img src={image} alt={title || 'Copertina manga'} /> : null}
           <div>
             <div className="D">{busy ? 'Aggiungo…' : added ? 'Aggiunto!' : 'Scegli!'}</div>
             <small>{busy ? 'un attimo…' : added ? shelfLabel : 'in quale scaffale?'}</small>
@@ -522,7 +522,7 @@ export default function SearchView({
                   }}
                 >
                   {item.cover ? (
-                    <img className="rr3c" src={item.cover} alt="" />
+                    <img className="rr3c" src={item.cover} alt={item.q || 'Copertina manga'} />
                   ) : (
                     <span className="rr3c rr3c-ph" aria-hidden="true">?</span>
                   )}

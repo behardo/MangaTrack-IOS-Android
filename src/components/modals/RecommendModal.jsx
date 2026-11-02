@@ -255,7 +255,7 @@ export default function RecommendModal({ initialManga, initialFriend, onClose, o
             </div>
             <div className="csb">
               <div className="csmm">
-                {mangaCover ? <img id="csimg" src={mangaCover} alt="" /> : <span id="csimg" />}
+                {mangaCover ? <img id="csimg" src={mangaCover} alt={mangaTitle || 'Copertina manga'} /> : <span id="csimg" />}
                 <b id="cst">{mangaTitle}</b>
               </div>
               <textarea

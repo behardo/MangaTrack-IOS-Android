@@ -1,0 +1,76 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+import handler, { mergeTotals } from '../api/totals.js';
+
+function makeRes() {
+  return {
+    statusCode: 0,
+    body: null,
+    headers: {},
+    setHeader(name, value) { this.headers[name] = value; },
+    status(code) { this.statusCode = code; return this; },
+    json(body) { this.body = body; return this; }
+  };
+}
+
+test('mergeTotals prende il valore più alto per capitoli e volumi', () => {
+  assert.deepEqual(
+    mergeTotals([
+      { chapters: 10, volumes: 2 },
+      { chapters: 12, volumes: null },
+      { chapters: null, volumes: 5 }
+    ]),
+    { chapters: 12, volumes: 5 }
+  );
+});
+
+test('handler rifiuta i metodi diversi da GET', async () => {
+  const res = makeRes();
+  await handler({ method: 'POST', query: {} }, res);
+
+  assert.equal(res.statusCode, 405);
+  assert.equal(res.headers.Allow, 'GET');
+});
+
+test('handler richiede il parametro title', async () => {
+  const res = makeRes();
+  await handler({ method: 'GET', query: {} }, res);
+
+  assert.equal(res.statusCode, 400);
+  assert.match(res.body.error, /title/);
+});
+
+test('handler aggrega le fonti e poi serve dalla cache', async t => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+
+  globalThis.fetch = async url => {
+    const target = String(url);
+    const payload = target.includes('mangadex')
+      ? { data: [{ attributes: { lastChapter: '87', lastVolume: '9' } }] }
+      : target.includes('kitsu')
+        ? { data: [{ attributes: { chapterCount: 90, volumeCount: 10 } }] }
+        : { data: [{ chapters: 88, volumes: 9 }] };
+    return { ok: true, json: async () => payload };
+  };
+
+  const title = `Berserk test ${Date.now()}`;
+
+  const first = makeRes();
+  await handler({ method: 'GET', query: { title } }, first);
+
+  assert.equal(first.statusCode, 200);
+  assert.equal(first.body.title, title);
+  assert.equal(first.body.chapters, 90);
+  assert.equal(first.body.volumes, 10);
+  assert.deepEqual(first.body.sources.sort(), ['jikan', 'kitsu', 'mangadex']);
+  assert.equal(first.headers['X-Cache'], 'MISS');
+
+  const second = makeRes();
+  await handler({ method: 'GET', query: { title } }, second);
+
+  assert.equal(second.statusCode, 200);
+  assert.equal(second.headers['X-Cache'], 'HIT');
+  assert.equal(second.body.chapters, 90);
+});

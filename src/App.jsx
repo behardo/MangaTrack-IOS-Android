@@ -282,7 +282,7 @@ export default function App() {
 
       {/* TOAST POPUP */}
       {toastText && (
-        <div className="toast-bubble">
+        <div className="toast-bubble" role="status" aria-live="polite">
           {toastText}
         </div>
       )}

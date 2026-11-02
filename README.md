@@ -5,8 +5,15 @@ Web app per tenere traccia della propria libreria manga: cosa sto leggendo, a ch
 Progetto individuale (tesina) per il modulo di **Tecnologie Web**, AA 2026-27, UNIMORE.
 Autore: **Behar Myzyri**
 
-- App online: https://manga-track-ios.vercel.app
-- Presentazione: [`docs/MangaTrack_Behar_Myzyri.pdf`](docs/MangaTrack_Behar_Myzyri.pdf) (versione PowerPoint con demo video: [`docs/MangaTrack_Behar_Myzyri.pptx`](docs/MangaTrack_Behar_Myzyri.pptx))
+## Demo
+
+- **App online:** https://manga-track-ios.vercel.app
+- **Presentazione:** [`docs/MangaTrack_Behar_Myzyri.pdf`](docs/MangaTrack_Behar_Myzyri.pdf) (versione PowerPoint con demo video: [`docs/MangaTrack_Behar_Myzyri.pptx`](docs/MangaTrack_Behar_Myzyri.pptx))
+- **Scaletta della demo:** [`docs/DEMO.md`](docs/DEMO.md)
+
+| Home | Libreria | Social |
+|---|---|---|
+| ![Home](docs/screenshots/home.jpg) | ![Libreria](docs/screenshots/library.jpg) | ![Social](docs/screenshots/social.jpg) |
 
 ---
 
@@ -94,6 +101,7 @@ src/context/AuthContext.jsx  sessione, refresh token, eliminazione account
 src/i18n/                traduzione IT/EN a runtime
 src/components/views/    le viste dell'app
 src/components/modals/   finestre modali
+tests/                   test con il runner nativo di Node (manga.js, api/totals.js)
 ```
 
 ---
@@ -117,6 +125,7 @@ src/components/modals/   finestre modali
 - **Funzione serverless** Vercel con cache e aggregazione di più fonti.
 - **Supabase**: PostgREST, policy RLS, Auth con refresh token e Storage, usati tramite REST senza SDK.
 - **Internazionalizzazione a runtime** basata su `MutationObserver`.
+- Arricchimento on-demand di copertine e sinossi: lookup AniList per titolo quando il dato manca, con cache implicita nella riga di libreria per le copertine.
 - Pipeline di **deploy** con controllo delle variabili d'ambiente in `vite.config.js`.
 
 ---
@@ -139,6 +148,7 @@ npm run dev               # http://localhost:3000
 | `npx vercel dev` | Avvia frontend e funzione serverless insieme, come in produzione. |
 | `npm run build` | Build di produzione in `dist/` (si ferma se mancano le variabili Supabase). |
 | `npm run preview` | Anteprima della build. |
+| `npm test` | Test automatici di `manga.js` e della funzione serverless `api/totals.js` (runner nativo di Node, nessuna dipendenza). |
 
 In sviluppo, `?preview=app` avvia la shell con dati demo senza chiamate reali a Supabase, mentre `&lang=en` forza l'interfaccia in inglese.
 
@@ -155,8 +165,8 @@ Nel client va usata **solo la chiave anon** (pubblica, protetta dalle policy RLS
 
 ## 5. Limiti noti
 
-- Nessun test automatico: le verifiche sono state fatte a mano.
-- Se AniList e Kitsu sono entrambi irraggiungibili, la ricerca non restituisce risultati.
+- I test automatici (`npm test`) coprono le funzioni di mapping e la funzione serverless; l'interfaccia è verificata a mano.
+- Se AniList e Kitsu sono entrambi irraggiungibili, la ricerca non restituisce risultati. Anche la sinossi nella scheda manga arriva da AniList e richiede la connessione.
 - Serve la connessione: la libreria non è disponibile offline. Il file `public/sw.js` non è una cache: rimuove il service worker di una versione precedente dell'app.
 - Le viste non hanno un URL proprio, perché non c'è un router.
 

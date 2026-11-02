@@ -963,7 +963,7 @@ export default function SocialView({ isActive, library = [], onOpenPreview, onOp
                       score: entry.score || null,
                     })}
                   >
-                    <img src={entry.cover || ''} alt="" />
+                    <img src={entry.cover || ''} alt={entry.title || 'Copertina manga'} />
                     {Number(entry.score) > 0 && <span className="s">★{entry.score}</span>}
                     {ownTitles.has(entry.title) && <span className="cm">ANCHE TU</span>}
                     <div className="t notr">{entry.title}</div>
@@ -1071,7 +1071,7 @@ export default function SocialView({ isActive, library = [], onOpenPreview, onOp
                   <div className="single">
                     <img
                       src={a.manga_cover || ''}
-                      alt=""
+                      alt={a.manga_title || 'Copertina manga'}
                       onClick={() => onOpenPreview?.({ title: a.manga_title, cover: a.manga_cover })}
                     />
                     <div>
@@ -1185,7 +1185,7 @@ export default function SocialView({ isActive, library = [], onOpenPreview, onOp
                           data-info={title}
                           onClick={() => onOpenPreview?.(m)}
                         >
-                          <img src={m.images?.jpg?.image_url || m.cover || ''} alt="" />
+                          <img src={m.images?.jpg?.image_url || m.cover || ''} alt={title || 'Copertina manga'} />
                           <div className="lb">
                             {title}
                             {score && <span className="sc">{score}</span>}
@@ -1256,7 +1256,7 @@ export default function SocialView({ isActive, library = [], onOpenPreview, onOp
                   {meta.reading ? (
                     <div className="tr">
                       {meta.reading.cover ? (
-                        <img className="cv" src={meta.reading.cover} alt="" />
+                        <img className="cv" src={meta.reading.cover} alt={meta.reading.title || 'Copertina manga'} />
                       ) : (
                         <span className="cv sg1-nocover" aria-hidden="true" />
                       )}
@@ -1375,7 +1375,7 @@ export default function SocialView({ isActive, library = [], onOpenPreview, onOp
             <div key={r.id} className="it">
               <div className="cv">
                 {r.manga_cover ? (
-                  <img src={r.manga_cover} alt="" />
+                  <img src={r.manga_cover} alt={r.manga_title || 'Copertina manga'} />
                 ) : (
                   <div style={{ width: '100%', height: '100%', background: 'var(--card2)' }} />
                 )}

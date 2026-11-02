@@ -240,7 +240,7 @@ export default function LibraryView({ isActive, library = [], loading = false, o
                 onClick={() => onSelectManga?.(m)}
               >
                 <div className="cv">
-                  <img src={m.cover || ''} alt="" />
+                  <img src={m.cover || ''} alt={m.title || 'Copertina manga'} />
                   <span className={`badge ${badgeClass} tb2`}>{badgeLabel}</span>
                   {Number(m.score) > 0 && <span className="rt">★ {m.score}</span>}
                   <div className="bt">

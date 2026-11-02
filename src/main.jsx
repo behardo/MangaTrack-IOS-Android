@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { AuthProvider } from './context/AuthContext';
+import ErrorBoundary from './components/common/ErrorBoundary';
 import './styles/hark-theme.css';
 
 /* The previous MangaTrack build registered a cache-first service worker.
@@ -25,8 +26,10 @@ if ('serviceWorker' in navigator) {
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <AuthProvider>
-      <App />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </ErrorBoundary>
   </React.StrictMode>
 );
