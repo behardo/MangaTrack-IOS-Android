@@ -127,8 +127,8 @@ tests/                   test con il runner nativo di Node (manga.js, api/totals
 - **Funzione serverless** Vercel con cache e aggregazione di più fonti.
 - **Supabase**: PostgREST, policy RLS, Auth con refresh token e Storage, usati tramite REST senza SDK.
 - **Internazionalizzazione a runtime** basata su `MutationObserver`.
-- Arricchimento on-demand di copertine e sinossi: lookup AniList per titolo quando il dato manca, con cache implicita nella riga di libreria per le copertine.
-- Pipeline di **deploy** con controllo delle variabili d'ambiente in `vite.config.js`.
+- Arricchimento on-demand di copertine, sinossi e totali di capitoli/volumi: lookup AniList per titolo quando il dato manca, con fallback aggregato per i totali e cache implicita nella riga di libreria.
+- Pipeline di **deploy** con controllo delle variabili d'ambiente in `vite.config.js` e workflow **GitHub Actions** che esegue test e build a ogni push.
 
 ---
 
@@ -168,7 +168,7 @@ Nel client va usata **solo la chiave anon** (pubblica, protetta dalle policy RLS
 ## 5. Limiti noti
 
 - I test automatici (`npm test`) coprono le funzioni di mapping e la funzione serverless; l'interfaccia è verificata a mano.
-- Se AniList e Kitsu sono entrambi irraggiungibili, la ricerca non restituisce risultati. Anche la sinossi nella scheda manga arriva da AniList e richiede la connessione.
+- Se AniList e Kitsu sono entrambi irraggiungibili, la ricerca non restituisce risultati. Anche la sinossi e i totali di capitoli/volumi nella scheda manga arrivano da AniList (con fallback sulle altre fonti) e richiedono la connessione.
 - Serve la connessione: la libreria non è disponibile offline. Il file `public/sw.js` non è una cache: rimuove il service worker di una versione precedente dell'app.
 - Le viste non hanno un URL proprio, perché non c'è un router.
 
