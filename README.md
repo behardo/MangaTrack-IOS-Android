@@ -78,7 +78,7 @@ Il backend è composto da due parti.
    - le **policy Row Level Security** fanno rispettare le regole di accesso nel database: il JWT dell'utente identifica chi fa la richiesta (`auth.uid()`) e ognuno può inserire, modificare o eliminare solo le righe che gli appartengono;
    - **Auth** rilascia i JWT, che il client invia in ogni richiesta;
    - **Storage** conserva gli avatar nel bucket `avatars`.
-2. **Funzione serverless Vercel** `api/totals.js` (`GET /api/totals?title=...`): interroga in parallelo MangaDex, Kitsu e Jikan con un timeout di 4 s ciascuno, tiene il totale più alto di capitoli e volumi, valida l'input (400 o 405) e mette in cache il risultato (in memoria e con `s-maxage` sulla CDN). Per le serie in corso, per cui MangaDex lascia vuoti `lastChapter`/`lastVolume`, ricava i totali dall'endpoint `aggregate` dello stesso manga. In questo modo il browser fa una sola richiesta invece di tre e la logica di aggregazione sta in un punto solo. Se la funzione non risponde, per esempio con `npm run dev`, il client ripiega sulle chiamate dirette.
+2. **Funzione serverless Vercel** `api/totals.js` (`GET /api/totals?title=...`): interroga in parallelo MangaDex, Kitsu e Jikan con un timeout di 4 s ciascuno, tiene il totale più alto di capitoli e volumi, valida l'input (400 o 405) e mette in cache il risultato (in memoria e con `s-maxage` sulla CDN). Per le serie in corso, per cui MangaDex lascia vuoti `lastChapter`/`lastVolume`, ricava i totali dall'endpoint `aggregate` dello stesso manga. Se nessuna delle tre fonti conosce il titolo, cerca su **MangaUpdates** e ne legge `latest_chapter` e il numero di volumi dallo `status`. In questo modo il browser fa una sola richiesta invece di tre e la logica di aggregazione sta in un punto solo. Se la funzione non risponde, per esempio con `npm run dev`, il client ripiega sulle chiamate dirette.
 
 ### Modello dei dati
 
@@ -127,7 +127,7 @@ tests/                   test con il runner nativo di Node (manga.js, api/totals
 - **Funzione serverless** Vercel con cache e aggregazione di più fonti.
 - **Supabase**: PostgREST, policy RLS, Auth con refresh token e Storage, usati tramite REST senza SDK.
 - **Internazionalizzazione a runtime** basata su `MutationObserver`.
-- Arricchimento on-demand di copertine, sinossi e totali di capitoli/volumi: lookup AniList per titolo quando il dato manca, con fallback aggregato per i totali e cache implicita nella riga di libreria.
+- Arricchimento on-demand di copertine, sinossi e totali di capitoli/volumi: lookup AniList per titolo quando il dato manca, con fallback aggregato (MangaDex/Kitsu/Jikan e, per i titoli non trovati, MangaUpdates) e auto-correzione dei totali impossibili (capitoli letti maggiori del totale salvato).
 - Pipeline di **deploy** con controllo delle variabili d'ambiente in `vite.config.js` e workflow **GitHub Actions** che esegue test e build a ogni push.
 
 ---
@@ -168,7 +168,7 @@ Nel client va usata **solo la chiave anon** (pubblica, protetta dalle policy RLS
 ## 5. Limiti noti
 
 - I test automatici (`npm test`) coprono le funzioni di mapping e la funzione serverless; l'interfaccia è verificata a mano.
-- Se AniList e Kitsu sono entrambi irraggiungibili, la ricerca non restituisce risultati. Anche la sinossi e i totali di capitoli/volumi nella scheda manga arrivano da AniList (con fallback sulle altre fonti) e richiedono la connessione.
+- Se AniList e Kitsu sono entrambi irraggiungibili, la ricerca non restituisce risultati. Anche la sinossi e i totali di capitoli/volumi nella scheda manga arrivano da AniList (con fallback sulle altre fonti) e richiedono la connessione; se nessuna fonte conosce un titolo molto di nicchia, il totale resta `?`.
 - Serve la connessione: la libreria non è disponibile offline. Il file `public/sw.js` non è una cache: rimuove il service worker di una versione precedente dell'app.
 - Le viste non hanno un URL proprio, perché non c'è un router.
 

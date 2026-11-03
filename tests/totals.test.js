@@ -65,6 +65,40 @@ test('handler ricava i totali da MangaDex aggregate per le serie in corso', asyn
   assert.deepEqual(res.body.sources, ['mangadex']);
 });
 
+test('handler usa MangaUpdates quando le fonti principali non trovano i totali', async t => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+
+  globalThis.fetch = async url => {
+    const target = String(url);
+    let payload;
+    if (target.includes('/aggregate')) {
+      payload = { volumes: {} };
+    } else if (target.includes('mangadex')) {
+      payload = { data: [{ id: 'md-1', attributes: { lastChapter: '', lastVolume: '' } }] };
+    } else if (target.includes('kitsu') || target.includes('jikan')) {
+      payload = { data: [] };
+    } else if (target.includes('mangaupdates.com/v1/series/search')) {
+      payload = {
+        results: [{ record: { series_id: 'mu-1', title: 'Titolo Raro' }, hit_title: 'Titolo Raro' }]
+      };
+    } else if (target.includes('mangaupdates.com/v1/series/mu-1')) {
+      payload = { status: '12 Volumes (Ongoing)', latest_chapter: 120 };
+    } else {
+      payload = { data: [] };
+    }
+    return { ok: true, json: async () => payload };
+  };
+
+  const res = makeRes();
+  await handler({ method: 'GET', query: { title: `Titolo Raro ${Date.now()}` } }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.chapters, 120);
+  assert.equal(res.body.volumes, 12);
+  assert.deepEqual(res.body.sources, ['mangaupdates']);
+});
+
 test('handler rifiuta i metodi diversi da GET', async () => {
   const res = makeRes();
   await handler({ method: 'POST', query: {} }, res);

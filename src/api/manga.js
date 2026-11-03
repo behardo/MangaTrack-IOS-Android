@@ -1,5 +1,5 @@
 export const ANILIST_URL = "https://graphql.anilist.co";
-export const ANILIST_FIELDS = `title{romaji english}coverImage{large}genres chapters volumes format averageScore description(asHtml:false)`;
+export const ANILIST_FIELDS = `title{romaji english}coverImage{large}genres chapters volumes format averageScore popularity description(asHtml:false)`;
 
 const ANILIST_TIMEOUT_MS = 6000;
 const KITSU_TIMEOUT_MS = 8000;
@@ -8,7 +8,7 @@ const KITSU_TIMEOUT_MS = 8000;
 const TOTALS_TIMEOUT_MS = 2500;
 // The serverless aggregate asks three providers in parallel, so give it a
 // little more room than a single direct provider call.
-const SERVER_TOTALS_TIMEOUT_MS = 8000;
+const SERVER_TOTALS_TIMEOUT_MS = 9000;
 
 async function timedFetch(url, options = {}, timeoutMs = 8000) {
   const controller = new AbortController();
@@ -132,7 +132,7 @@ export async function jikanLookup(title) {
    senza `vercel dev`) ripiega sulle chiamate dirette dal browser. */
 async function serverTotals(title) {
   try {
-    const res = await timedFetch(`/api/totals?title=${encodeURIComponent(title)}`, {}, SERVER_TOTALS_TIMEOUT_MS);
+    const res = await timedFetch(`/api/totals?title=${encodeURIComponent(title)}&v=3`, {}, SERVER_TOTALS_TIMEOUT_MS);
     if (!res.ok || !(res.headers.get("content-type") || "").includes("json")) return null;
     return await res.json();
   } catch {
@@ -172,14 +172,16 @@ export async function searchManga(query) {
    feed and the recommendations copy just title/cover, and older library rows
    may have been saved without a cover. Search returns several candidates (a
    generic title like "Real" matches unrelated manga first), so prefer an exact
-   title match before falling back to AniList's own ranking. */
+   title match and, among exact matches, the most popular work. Popularity is
+   the best available disambiguator: the real "Real" has ~50k favourites while
+   the unrelated 8-chapter omonym has a few dozen. */
 export async function mangaInfo(title) {
   const query = (title || "").trim();
   if (!query) return null;
 
   try {
     const data = await anilist(
-      `query($s:String){Page(page:1,perPage:8){media(search:$s,type:MANGA,sort:SEARCH_MATCH){${ANILIST_FIELDS}}}}`,
+      `query($s:String){Page(page:1,perPage:12){media(search:$s,type:MANGA,sort:SEARCH_MATCH){${ANILIST_FIELDS}}}}`,
       { s: query }
     );
     const media = data.Page?.media || [];
@@ -188,11 +190,20 @@ export async function mangaInfo(title) {
     const normalize = value =>
       (value || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
     const wanted = normalize(query);
-    const best = media.find(m =>
+    const exact = media.filter(m =>
       normalize(m.title?.romaji) === wanted || normalize(m.title?.english) === wanted
-    ) || media[0];
+    );
 
-    return mapAniList(best);
+    if (exact.length) {
+      const formatRank = m => (m.format === "MANGA" ? 1 : m.format === "ONE_SHOT" ? 0 : 0.5);
+      exact.sort((a, b) =>
+        (Number(b.popularity) || 0) - (Number(a.popularity) || 0) ||
+        formatRank(b) - formatRank(a)
+      );
+      return mapAniList(exact[0]);
+    }
+
+    return mapAniList(media[0]);
   } catch {
     return null;
   }

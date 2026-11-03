@@ -2,8 +2,10 @@
  * Funzione serverless Vercel: GET /api/totals?title=<titolo>
  *
  * Logica lato server per arricchire un manga con il numero totale di
- * capitoli e volumi. Interroga in parallelo MangaDex, Kitsu e Jikan,
- * tiene il valore più alto trovato e mette in cache la risposta.
+ * capitoli e volumi. Interroga in parallelo MangaDex, Kitsu e Jikan, tiene il
+ * valore più alto trovato e mette in cache la risposta. Se le fonti principali
+ * non conoscono il titolo, cerca su MangaUpdates (che copre anche serie
+ * pubblicate solo in Giappone o fuori catalogo).
  *
  * Perché sul server:
  *  - il browser fa una sola richiesta invece di tre;
@@ -14,14 +16,15 @@
 
 const TIMEOUT_MS = 4000;
 const AGGREGATE_TIMEOUT_MS = 3000;
+const MANGAUPDATES_TIMEOUT_MS = 2000;
 const CACHE = new Map();          // cache in memoria dell'istanza
 const CACHE_TTL_MS = 60 * 60 * 1000;
 
-async function timedJson(url, headers = {}, timeoutMs = TIMEOUT_MS) {
+async function timedJson(url, headers = {}, timeoutMs = TIMEOUT_MS, init = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(url, { headers, signal: controller.signal });
+    const res = await fetch(url, { ...init, headers, signal: controller.signal });
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -93,6 +96,49 @@ async function jikan(title) {
   return { source: 'jikan', chapters: toInt(a?.chapters), volumes: toInt(a?.volumes) };
 }
 
+const normalizeTitle = value =>
+  (value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+// Last-resort search: MangaUpdates covers many series that are missing from
+// MangaDex/Kitsu/Jikan. The search response has no totals, so fetch the series
+// detail only when the primary sources left a field empty.
+async function mangaupdatesSearch(title) {
+  const d = await timedJson(
+    'https://api.mangaupdates.com/v1/series/search',
+    {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      'User-Agent': 'MangaTrack/1.0'
+    },
+    MANGAUPDATES_TIMEOUT_MS,
+    { method: 'POST', body: JSON.stringify({ search: title, perpage: 5 }) }
+  );
+  const rows = d?.results || [];
+  if (!rows.length) return null;
+  const wanted = normalizeTitle(title);
+  const best = rows.find(r =>
+    normalizeTitle(r?.record?.title) === wanted || normalizeTitle(r?.hit_title) === wanted
+  ) || rows[0];
+  return best?.record?.series_id
+    ? { id: best.record.series_id, title: best.record.title }
+    : null;
+}
+
+async function mangaupdatesDetail(candidate) {
+  if (!candidate?.id) return null;
+  const d = await timedJson(
+    `https://api.mangaupdates.com/v1/series/${candidate.id}`,
+    { Accept: 'application/json', 'User-Agent': 'MangaTrack/1.0' },
+    MANGAUPDATES_TIMEOUT_MS
+  );
+  const volumes = toInt(String(d?.status || '').match(/(\d+)\s+Volumes?/i)?.[1]);
+  return {
+    source: 'mangaupdates',
+    chapters: toInt(d?.latest_chapter),
+    volumes
+  };
+}
+
 export function mergeTotals(results) {
   let chapters = null;
   let volumes = null;
@@ -116,7 +162,9 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Parametro "title" mancante o non valido' });
   }
 
-  const key = title.toLowerCase();
+  // Version the key so a deploy that fixes a provider does not keep serving an
+  // old empty/wrong aggregate from a warm instance or the CDN.
+  const key = `v3:${title.toLowerCase()}`;
   const hit = CACHE.get(key);
   if (hit && Date.now() - hit.at < CACHE_TTL_MS) {
     res.setHeader('X-Cache', 'HIT');
@@ -125,6 +173,25 @@ export default async function handler(req, res) {
 
   const results = await Promise.all([mangadex(title), kitsu(title), jikan(title)]);
   const totals = mergeTotals(results);
+
+  if (totals.chapters == null || totals.volumes == null) {
+    const candidate = await mangaupdatesSearch(title);
+    if (candidate) {
+      const fallback = await mangaupdatesDetail(candidate);
+      const fallbackChapters = toInt(fallback?.chapters);
+      const fallbackVolumes = toInt(fallback?.volumes);
+      if (totals.chapters == null && fallbackChapters != null) {
+        totals.chapters = fallbackChapters;
+      }
+      if (totals.volumes == null && fallbackVolumes != null) {
+        totals.volumes = fallbackVolumes;
+      }
+      if (fallbackChapters != null || fallbackVolumes != null) {
+        results.push(fallback);
+      }
+    }
+  }
+
   const body = {
     title,
     ...totals,

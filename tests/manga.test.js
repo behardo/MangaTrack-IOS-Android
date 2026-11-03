@@ -68,6 +68,64 @@ test('mangaInfo preferisce la corrispondenza esatta del titolo', async t => {
   assert.equal(info.synopsis, 'Tre ragazzi e il basket.');
 });
 
+test('mangaInfo sceglie il candidato esatto più popolare', async t => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+
+  globalThis.fetch = async () => ({
+    ok: true,
+    json: async () => ({
+      data: {
+        Page: {
+          media: [
+            {
+              title: { romaji: 'REAL', english: null },
+              coverImage: { large: 'https://img.example/wrong-1.jpg' },
+              genres: [],
+              chapters: 8,
+              volumes: 1,
+              format: 'MANGA',
+              popularity: 47,
+              averageScore: null,
+              description: 'Omonimo sbagliato'
+            },
+            {
+              title: { romaji: 'Real', english: 'Real' },
+              coverImage: { large: 'https://img.example/real.jpg' },
+              genres: ['Drama'],
+              chapters: null,
+              volumes: null,
+              format: 'MANGA',
+              popularity: 51102,
+              averageScore: 89,
+              description: 'Tre ragazzi e il basket.'
+            },
+            {
+              title: { romaji: 'Real', english: null },
+              coverImage: { large: 'https://img.example/wrong-2.jpg' },
+              genres: [],
+              chapters: 6,
+              volumes: 1,
+              format: 'MANGA',
+              popularity: 49,
+              averageScore: null,
+              description: 'Altro omonimo'
+            }
+          ]
+        }
+      }
+    })
+  });
+
+  const info = await mangaInfo('Real');
+
+  assert.equal(info.title, 'Real');
+  assert.equal(info.images.jpg.image_url, 'https://img.example/real.jpg');
+  assert.equal(info.chapters, null);
+  assert.equal(info.volumes, null);
+  assert.equal(info.synopsis, 'Tre ragazzi e il basket.');
+});
+
 test('mangaInfo non chiama la rete senza un titolo', async () => {
   assert.equal(await mangaInfo('   '), null);
 });

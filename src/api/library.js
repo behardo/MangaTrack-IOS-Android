@@ -39,8 +39,8 @@ export async function addMangaFromPreview(previewManga, userId, currentLib = [],
   // Insert with the data we already have. The previous version waited for
   // MangaDex + Kitsu + Jikan before inserting, so one slow provider could make
   // an add feel frozen for many seconds.
-  const totalCh = previewManga.chapters ?? null;
-  const totalVol = previewManga.volumes ?? null;
+  const totalCh = Number(previewManga.chapters) > 0 ? Number(previewManga.chapters) : null;
+  const totalVol = Number(previewManga.volumes) > 0 ? Number(previewManga.volumes) : null;
   const firstGenre = previewManga.genres?.[0];
   const genre = typeof firstGenre === "string"
     ? firstGenre
@@ -100,8 +100,14 @@ export async function addMangaFromPreview(previewManga, userId, currentLib = [],
         // Never overwrite totals the user may have edited while the background
         // lookup was running: only fill fields that are still empty.
         const match = [`id=eq.${created.id}`];
-        if (patch.total_chapters != null) match.push("total_chapters=is.null");
-        if (patch.total_volumes != null) match.push("total_volumes=is.null");
+        const empty = [];
+        if (patch.total_chapters != null) {
+          empty.push("total_chapters.is.null", "total_chapters.eq.0");
+        }
+        if (patch.total_volumes != null) {
+          empty.push("total_volumes.is.null", "total_volumes.eq.0");
+        }
+        match.push(`or=(${empty.join(",")})`);
 
         return upd("library", match.join("&"), patch).then(updatedRows => {
           // Only merge the enriched totals locally; the user may have changed
@@ -176,12 +182,29 @@ const BACKFILL_DELAY_MS = 350;
 
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-function missingChapters(manga) {
-  return manga?.total_chapters == null || Number(manga.total_chapters) <= 0;
+const numberOrZero = value => {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+};
+
+// A total is missing, or clearly wrong because the user has already read more
+// chapters/volumes than the stored total. This second case repairs old rows
+// that got an omonym's totals (e.g. "Real" had 8 chapters instead of 106).
+function needsChapters(manga) {
+  const total = numberOrZero(manga?.total_chapters);
+  return total <= 0 || numberOrZero(manga?.chapters) > total;
 }
 
-function missingVolumes(manga) {
-  return manga?.total_volumes == null || Number(manga.total_volumes) <= 0;
+function needsVolumes(manga) {
+  const total = numberOrZero(manga?.total_volumes);
+  return total <= 0 || numberOrZero(manga?.volumes) > total;
+}
+
+// Totals smaller than the user's progress cannot be right; ask the next
+// provider instead of writing a worse value.
+function usableTotal(value, progress) {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 && n >= progress ? n : null;
 }
 
 /**
@@ -198,15 +221,16 @@ export async function saveMangaTotals(mangaId, patch) {
 }
 
 /**
- * Fill the missing totals of rows saved before the enrichment existed. Runs in
- * the background after the library loads; AniList is asked first (it supplies
- * both fields), then the aggregated totalsLookup covers titles AniList does
- * not know. Only empty fields are patched, so progress and user edits win.
+ * Fill missing or inconsistent totals for existing rows. Runs in the
+ * background after the library loads; AniList is asked first (it supplies
+ * identity, cover and often the totals), then the aggregated totalsLookup
+ * covers titles AniList does not know and MangaUpdates catches the rest.
+ * Only empty or impossible fields are patched, so progress and user edits win.
  */
 export async function backfillTotals(entries, onUpdate) {
   const pending = (Array.isArray(entries) ? entries : [])
     .filter(manga => REAL_ID.test(String(manga?.id || '')))
-    .filter(manga => missingChapters(manga) || missingVolumes(manga))
+    .filter(manga => needsChapters(manga) || needsVolumes(manga))
     .slice(0, BACKFILL_LIMIT);
 
   if (!pending.length) return;
@@ -215,39 +239,53 @@ export async function backfillTotals(entries, onUpdate) {
     const title = (manga.title || "").trim();
     if (!title) continue;
 
-    const needChapters = missingChapters(manga);
-    const needVolumes = missingVolumes(manga);
-    let chapters = needChapters ? null : Number(manga.total_chapters);
-    let volumes = needVolumes ? null : Number(manga.total_volumes);
+    const progressChapters = numberOrZero(manga.chapters);
+    const progressVolumes = numberOrZero(manga.volumes);
+    const needChapters = needsChapters(manga);
+    const needVolumes = needsVolumes(manga);
+    let chapters = needChapters ? null : numberOrZero(manga.total_chapters);
+    let volumes = needVolumes ? null : numberOrZero(manga.total_volumes);
 
     try {
       const info = await mangaInfo(title);
-      if (chapters == null && info?.chapters != null) chapters = info.chapters;
-      if (volumes == null && info?.volumes != null) volumes = info.volumes;
+      if (needChapters) chapters = usableTotal(info?.chapters, progressChapters);
+      if (needVolumes) volumes = usableTotal(info?.volumes, progressVolumes);
 
-      if (chapters == null || volumes == null) {
+      if ((needChapters && chapters == null) || (needVolumes && volumes == null)) {
         const totals = await totalsLookup(title, chapters, volumes);
-        if (chapters == null && totals.chapters != null) chapters = totals.chapters;
-        if (volumes == null && totals.volumes != null) volumes = totals.volumes;
+        if (needChapters && chapters == null) {
+          chapters = usableTotal(totals.chapters, progressChapters);
+        }
+        if (needVolumes && volumes == null) {
+          volumes = usableTotal(totals.volumes, progressVolumes);
+        }
       }
 
       const patch = {};
-      if (needChapters && chapters != null && chapters > 0) {
+      if (needChapters && chapters != null) {
         patch.total_chapters = chapters;
       }
-      if (needVolumes && volumes != null && volumes > 0) {
+      if (needVolumes && volumes != null) {
         patch.total_volumes = volumes;
       }
       if (!Object.keys(patch).length) continue;
 
       // Guard each field so a value written by another tab (or by the detail
-      // view while the lookup was in flight) is never overwritten.
+      // view while the lookup was in flight) is never overwritten. For an
+      // inconsistent row, allow the update when the stored total is still
+      // below the user's progress.
       const empty = [];
       if (patch.total_chapters != null) {
         empty.push("total_chapters.is.null", "total_chapters.eq.0");
+        if (progressChapters > 0) {
+          empty.push(`total_chapters.lt.${progressChapters}`);
+        }
       }
       if (patch.total_volumes != null) {
         empty.push("total_volumes.is.null", "total_volumes.eq.0");
+        if (progressVolumes > 0) {
+          empty.push(`total_volumes.lt.${progressVolumes}`);
+        }
       }
       const filter = `id=eq.${manga.id}&or=(${empty.join(",")})`;
 

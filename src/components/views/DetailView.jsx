@@ -130,11 +130,22 @@ export default function DetailView({ manga, onClose, onSaveSuccess, onDeleteSucc
 
     const needSynopsis = !(manga.synopsis && manga.synopsis.trim());
     const needCover = !manga.cover;
-    const needChapters = !(Number(manga.total_chapters) > 0);
-    const needVolumes = !(Number(manga.total_volumes) > 0);
+    const progressChapters = Number(manga.chapters) || 0;
+    const progressVolumes = Number(manga.volumes) || 0;
+    const storedChapters = Number(manga.total_chapters) || 0;
+    const storedVolumes = Number(manga.total_volumes) || 0;
+    // Re-enrich when the total is missing or impossible (the user has already
+    // read more chapters than the stored total, e.g. an old wrong match).
+    const needChapters = storedChapters <= 0 || progressChapters > storedChapters;
+    const needVolumes = storedVolumes <= 0 || progressVolumes > storedVolumes;
     if (!needSynopsis && !needCover && !needChapters && !needVolumes) {
       return undefined;
     }
+
+    const usableTotal = (value, progress) => {
+      const n = Number(value);
+      return Number.isFinite(n) && n > 0 && n >= progress ? n : null;
+    };
 
     const isRealRow = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(manga.id || ''));
     const persist = patch => {
@@ -169,24 +180,27 @@ export default function DetailView({ manga, onClose, onSaveSuccess, onDeleteSucc
           }
         }
 
-        let chapters = needChapters ? (info?.chapters ?? null) : null;
-        let volumes = needVolumes ? (info?.volumes ?? null) : null;
+        let chapters = needChapters ? usableTotal(info?.chapters, progressChapters) : null;
+        let volumes = needVolumes ? usableTotal(info?.volumes, progressVolumes) : null;
         const fromAniList = {};
-        if (chapters != null && chapters > 0) fromAniList.total_chapters = chapters;
-        if (volumes != null && volumes > 0) fromAniList.total_volumes = volumes;
+        if (chapters != null) fromAniList.total_chapters = chapters;
+        if (volumes != null) fromAniList.total_volumes = volumes;
         persist(fromAniList);
 
-        // AniList leaves volumes/chapters empty for some titles: ask the
-        // MangaDex/Kitsu/Jikan aggregate only for the fields still missing.
+        // AniList leaves volumes/chapters empty for some titles, and can pick
+        // an omonym with implausible totals: ask the aggregate for the fields
+        // still missing, rejecting values below the user's progress.
         if ((needChapters && chapters == null) || (needVolumes && volumes == null)) {
           const totals = await totalsLookup(manga.title, chapters, volumes);
           if (!active) return;
           const fallback = {};
-          if (needChapters && chapters == null && totals.chapters != null && totals.chapters > 0) {
-            fallback.total_chapters = totals.chapters;
+          if (needChapters && chapters == null) {
+            const total = usableTotal(totals.chapters, progressChapters);
+            if (total != null) fallback.total_chapters = total;
           }
-          if (needVolumes && volumes == null && totals.volumes != null && totals.volumes > 0) {
-            fallback.total_volumes = totals.volumes;
+          if (needVolumes && volumes == null) {
+            const total = usableTotal(totals.volumes, progressVolumes);
+            if (total != null) fallback.total_volumes = total;
           }
           persist(fallback);
         }
