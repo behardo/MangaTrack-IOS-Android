@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { onActivateKey } from '../../utils/a11y';
 
 export default function HomeView({ isActive, library = [], username, onSelectManga, onNavigate }) {
   const totManga = library.length;
@@ -95,7 +96,11 @@ export default function HomeView({ isActive, library = [], username, onSelectMan
           <div
             className="h2c press"
             id="h2c"
+            role="button"
+            tabIndex={0}
+            aria-label={`Continua a leggere ${topContinue.title || ''}`}
             onClick={() => onSelectManga?.(topContinue)}
+            onKeyDown={onActivateKey(() => onSelectManga?.(topContinue))}
           >
             <div
               className="bg"
@@ -160,7 +165,11 @@ export default function HomeView({ isActive, library = [], username, onSelectMan
                 key={m.id || idx}
                 className={`fs ${isFirst ? 'first' : ''} press`}
                 data-t={m.title}
+                role="button"
+                tabIndex={0}
+                aria-label={`Apri ${m.title || 'manga'}`}
                 onClick={() => onSelectManga?.(m)}
+                onKeyDown={onActivateKey(() => onSelectManga?.(m))}
               >
                 <div
                   className="bg"
@@ -191,7 +200,11 @@ export default function HomeView({ isActive, library = [], username, onSelectMan
               <div
                 key={m.id || idx}
                 className="fs press"
+                role="button"
+                tabIndex={0}
+                aria-label={`Apri ${m.title || 'manga'}`}
                 onClick={() => onSelectManga?.(m)}
+                onKeyDown={onActivateKey(() => onSelectManga?.(m))}
               >
                 <div
                   className="bg"

@@ -1,12 +1,21 @@
 import React from 'react';
+import { onActivateKey } from '../../utils/a11y';
 
 export default function BottomBar({ activeTab, onNavigate, unreadCount = 0 }) {
+  const item = tab => ({
+    role: 'button',
+    tabIndex: 0,
+    'aria-current': activeTab === tab ? 'page' : undefined,
+    onClick: () => onNavigate?.(tab),
+    onKeyDown: onActivateKey(() => onNavigate?.(tab)),
+  });
+
   return (
     <nav className="bar" id="bar">
       <div
         className={`tb ${activeTab === 'home' ? 'on' : ''}`}
         data-v="home"
-        onClick={() => onNavigate?.('home')}
+        {...item('home')}
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M3 11 12 4l9 7" />
@@ -19,7 +28,7 @@ export default function BottomBar({ activeTab, onNavigate, unreadCount = 0 }) {
       <div
         className={`tb ${activeTab === 'lib' ? 'on' : ''}`}
         data-v="lib"
-        onClick={() => onNavigate?.('lib')}
+        {...item('lib')}
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
           <rect x="4" y="3" width="5" height="18" rx="1.5" />
@@ -32,7 +41,7 @@ export default function BottomBar({ activeTab, onNavigate, unreadCount = 0 }) {
       <div
         className={`tb ${activeTab === 'search' ? 'on' : ''}`}
         data-v="search"
-        onClick={() => onNavigate?.('search')}
+        {...item('search')}
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
           <circle cx="11" cy="11" r="7" />
@@ -44,7 +53,7 @@ export default function BottomBar({ activeTab, onNavigate, unreadCount = 0 }) {
       <div
         className={`tb ${activeTab === 'social' ? 'on' : ''}`}
         data-v="social"
-        onClick={() => onNavigate?.('social')}
+        {...item('social')}
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="9" cy="8" r="3.5" />
@@ -59,7 +68,7 @@ export default function BottomBar({ activeTab, onNavigate, unreadCount = 0 }) {
       <div
         className={`tb ${activeTab === 'settings' ? 'on' : ''}`}
         data-v="settings"
-        onClick={() => onNavigate?.('settings')}
+        {...item('settings')}
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="3" />

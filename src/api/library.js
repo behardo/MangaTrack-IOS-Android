@@ -170,3 +170,95 @@ export async function saveMangaCover(mangaId, cover) {
   }
 }
 
+const REAL_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const BACKFILL_LIMIT = 30;
+const BACKFILL_DELAY_MS = 350;
+
+const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+function missingChapters(manga) {
+  return manga?.total_chapters == null || Number(manga.total_chapters) <= 0;
+}
+
+function missingVolumes(manga) {
+  return manga?.total_volumes == null || Number(manga.total_volumes) <= 0;
+}
+
+/**
+ * Persist chapter/volume totals for one row. Same contract as saveMangaCover:
+ * metadata only, never touches the user's reading progress.
+ */
+export async function saveMangaTotals(mangaId, patch) {
+  if (!mangaId || !patch || !Object.keys(patch).length) return;
+  try {
+    await upd("library", `id=eq.${mangaId}`, patch);
+  } catch {
+    /* the detail view keeps showing the enriched values */
+  }
+}
+
+/**
+ * Fill the missing totals of rows saved before the enrichment existed. Runs in
+ * the background after the library loads; AniList is asked first (it supplies
+ * both fields), then the aggregated totalsLookup covers titles AniList does
+ * not know. Only empty fields are patched, so progress and user edits win.
+ */
+export async function backfillTotals(entries, onUpdate) {
+  const pending = (Array.isArray(entries) ? entries : [])
+    .filter(manga => REAL_ID.test(String(manga?.id || '')))
+    .filter(manga => missingChapters(manga) || missingVolumes(manga))
+    .slice(0, BACKFILL_LIMIT);
+
+  if (!pending.length) return;
+
+  for (const manga of pending) {
+    const title = (manga.title || "").trim();
+    if (!title) continue;
+
+    const needChapters = missingChapters(manga);
+    const needVolumes = missingVolumes(manga);
+    let chapters = needChapters ? null : Number(manga.total_chapters);
+    let volumes = needVolumes ? null : Number(manga.total_volumes);
+
+    try {
+      const info = await mangaInfo(title);
+      if (chapters == null && info?.chapters != null) chapters = info.chapters;
+      if (volumes == null && info?.volumes != null) volumes = info.volumes;
+
+      if (chapters == null || volumes == null) {
+        const totals = await totalsLookup(title, chapters, volumes);
+        if (chapters == null && totals.chapters != null) chapters = totals.chapters;
+        if (volumes == null && totals.volumes != null) volumes = totals.volumes;
+      }
+
+      const patch = {};
+      if (needChapters && chapters != null && chapters > 0) {
+        patch.total_chapters = chapters;
+      }
+      if (needVolumes && volumes != null && volumes > 0) {
+        patch.total_volumes = volumes;
+      }
+      if (!Object.keys(patch).length) continue;
+
+      // Guard each field so a value written by another tab (or by the detail
+      // view while the lookup was in flight) is never overwritten.
+      const empty = [];
+      if (patch.total_chapters != null) {
+        empty.push("total_chapters.is.null", "total_chapters.eq.0");
+      }
+      if (patch.total_volumes != null) {
+        empty.push("total_volumes.is.null", "total_volumes.eq.0");
+      }
+      const filter = `id=eq.${manga.id}&or=(${empty.join(",")})`;
+
+      const updated = await upd("library", filter, patch);
+      if (Array.isArray(updated) && updated.length === 0) continue;
+      onUpdate?.({ id: manga.id, ...patch });
+    } catch {
+      /* one unreachable provider must not stop the remaining rows */
+    }
+
+    await pause(BACKFILL_DELAY_MS);
+  }
+}
+

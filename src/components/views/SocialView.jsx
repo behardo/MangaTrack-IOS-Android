@@ -4,6 +4,7 @@ import { q, ins, upd, del } from '../../api/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { fetchTrendingManga } from '../../api/manga';
 import { addMangaFromPreview } from '../../api/library';
+import { onActivateKey } from '../../utils/a11y';
 import Avatar from '../common/Avatar';
 
 /* Hark shows a single "added N manga" card when a reader imports several
@@ -989,19 +990,54 @@ export default function SocialView({ isActive, library = [], onOpenPreview, onOp
       {/* SUBTABS WITH SLIDING INDICATOR */}
       <div className="stab" id="stab" ref={stabRef}>
         <div className="ind" />
-        <div className={`o ${tab === 'feed' ? 'on' : ''}`} onClick={() => setTab('feed')}>
+        <div
+          className={`o ${tab === 'feed' ? 'on' : ''}`}
+          role="button"
+          tabIndex={0}
+          aria-pressed={tab === 'feed'}
+          onClick={() => setTab('feed')}
+          onKeyDown={onActivateKey(() => setTab('feed'))}
+        >
           Feed
         </div>
-        <div className={`o ${tab === 'foryou' ? 'on' : ''}`} onClick={() => setTab('foryou')}>
+        <div
+          className={`o ${tab === 'foryou' ? 'on' : ''}`}
+          role="button"
+          tabIndex={0}
+          aria-pressed={tab === 'foryou'}
+          onClick={() => setTab('foryou')}
+          onKeyDown={onActivateKey(() => setTab('foryou'))}
+        >
           Per te
         </div>
-        <div className={`o ${tab === 'following' ? 'on' : ''}`} onClick={() => setTab('following')}>
+        <div
+          className={`o ${tab === 'following' ? 'on' : ''}`}
+          role="button"
+          tabIndex={0}
+          aria-pressed={tab === 'following'}
+          onClick={() => setTab('following')}
+          onKeyDown={onActivateKey(() => setTab('following'))}
+        >
           Seguiti
         </div>
-        <div className={`o ${tab === 'find' ? 'on' : ''}`} onClick={() => setTab('find')}>
+        <div
+          className={`o ${tab === 'find' ? 'on' : ''}`}
+          role="button"
+          tabIndex={0}
+          aria-pressed={tab === 'find'}
+          onClick={() => setTab('find')}
+          onKeyDown={onActivateKey(() => setTab('find'))}
+        >
           Cerca
         </div>
-        <div className={`o ${recs.length > 0 ? 'dot' : ''} ${tab === 'recs' ? 'on' : ''}`} onClick={() => setTab('recs')}>
+        <div
+          className={`o ${recs.length > 0 ? 'dot' : ''} ${tab === 'recs' ? 'on' : ''}`}
+          role="button"
+          tabIndex={0}
+          aria-pressed={tab === 'recs'}
+          onClick={() => setTab('recs')}
+          onKeyDown={onActivateKey(() => setTab('recs'))}
+        >
           Consigli
         </div>
       </div>
@@ -1011,7 +1047,15 @@ export default function SocialView({ isActive, library = [], onOpenPreview, onOp
         {/* Following avatars horizontal reel */}
         <div className="people">
           {following.map(u => (
-            <div key={u.id} className="p press" onClick={() => openUserLibrary(u)}>
+            <div
+              key={u.id}
+              className="p press"
+              role="button"
+              tabIndex={0}
+              aria-label={`Apri la libreria di ${u.username}`}
+              onClick={() => openUserLibrary(u)}
+              onKeyDown={onActivateKey(() => openUserLibrary(u))}
+            >
               <Avatar
                 className="ar"
                 src={u.avatar_url}
@@ -1022,7 +1066,13 @@ export default function SocialView({ isActive, library = [], onOpenPreview, onOp
               {u.username}
             </div>
           ))}
-          <div className="p add press" onClick={() => setTab('find')}>
+          <div
+            className="p add press"
+            role="button"
+            tabIndex={0}
+            onClick={() => setTab('find')}
+            onKeyDown={onActivateKey(() => setTab('find'))}
+          >
             <div className="ar">+</div>
             Trova amici
           </div>
@@ -1072,7 +1122,13 @@ export default function SocialView({ isActive, library = [], onOpenPreview, onOp
                     <img
                       src={a.manga_cover || ''}
                       alt={a.manga_title || 'Copertina manga'}
+                      loading="lazy"
+                      decoding="async"
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Apri ${a.manga_title || 'manga'}`}
                       onClick={() => onOpenPreview?.({ title: a.manga_title, cover: a.manga_cover })}
+                      onKeyDown={onActivateKey(() => onOpenPreview?.({ title: a.manga_title, cover: a.manga_cover }))}
                     />
                     <div>
                       <div className="t">{a.manga_title}</div>
@@ -1183,9 +1239,18 @@ export default function SocialView({ isActive, library = [], onOpenPreview, onOp
                           key={`${forYouIndex}-${title}-${idx}`}
                           className={`p ${letter}`}
                           data-info={title}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`Apri ${title}`}
                           onClick={() => onOpenPreview?.(m)}
+                          onKeyDown={onActivateKey(() => onOpenPreview?.(m))}
                         >
-                          <img src={m.images?.jpg?.image_url || m.cover || ''} alt={title || 'Copertina manga'} />
+                          <img
+                            src={m.images?.jpg?.image_url || m.cover || ''}
+                            alt={title || 'Copertina manga'}
+                            loading="lazy"
+                            decoding="async"
+                          />
                           <div className="lb">
                             {title}
                             {score && <span className="sc">{score}</span>}

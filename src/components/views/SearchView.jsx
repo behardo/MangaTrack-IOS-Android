@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { searchManga, fetchTrendingManga } from '../../api/manga';
 import { addMangaFromPreview, deleteMangaFromLibrary } from '../../api/library';
 import { upd } from '../../api/supabase';
+import { onActivateKey } from '../../utils/a11y';
 
 const RECENT_SEARCHES_KEY = 'mt_searches';
 const SHELVES = [
@@ -230,10 +231,14 @@ function TrendCard({ manga, idx, library, onOpenPreview, onMangaAdded, onMangaSa
           onClick={() => onOpenPreview?.(manga)}
           style={{ cursor: 'pointer' }}
           aria-hidden={flipped}
+          role={flipped ? undefined : 'button'}
+          tabIndex={flipped ? -1 : 0}
+          aria-label={flipped ? undefined : `Apri ${title}`}
+          onKeyDown={onActivateKey(() => onOpenPreview?.(manga))}
         >
           <div className="rank">{idx + 1}</div>
           {image ? (
-            <img src={image} alt={title} className="cover" />
+            <img src={image} alt={title} className="cover" loading="lazy" decoding="async" />
           ) : (
             <div className="cover" style={{ display: 'grid', placeItems: 'center', fontFamily: 'var(--display)', color: 'var(--red)' }}>
               {title.slice(0, 2).toUpperCase()}

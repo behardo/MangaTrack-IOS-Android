@@ -5,6 +5,8 @@ Web app per tenere traccia della propria libreria manga: cosa sto leggendo, a ch
 Progetto individuale (tesina) per il modulo di **Tecnologie Web**, AA 2026-27, UNIMORE.
 Autore: **Behar Myzyri**
 
+[![CI](https://github.com/behardo/MangaTrack-IOS-Android/actions/workflows/ci.yml/badge.svg)](https://github.com/behardo/MangaTrack-IOS-Android/actions/workflows/ci.yml)
+
 ## Demo
 
 - **App online:** https://manga-track-ios.vercel.app

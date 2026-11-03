@@ -13,7 +13,7 @@ import DetailView from './components/views/DetailView';
 import PreviewSheet from './components/modals/PreviewSheet';
 import RecommendModal from './components/modals/RecommendModal';
 import DeleteModal from './components/modals/DeleteModal';
-import { fetchUserLibrary } from './api/library';
+import { fetchUserLibrary, backfillTotals } from './api/library';
 import { getPendingRecsCount } from './api/social';
 import { installAppLanguage, setAppLanguage } from './i18n/appLanguage';
 
@@ -57,6 +57,7 @@ export default function App() {
   const [toastText, setToastText] = useState('');
 
   const viewsRef = useRef(null);
+  const totalsBackfillFor = useRef(null);
 
   const showToast = useCallback((msg) => {
     setToastText(msg);
@@ -135,6 +136,24 @@ export default function App() {
   const handleMangaAdded = (newManga) => {
     setLibrary(prev => [newManga, ...prev]);
   };
+
+  // Older rows were saved before AniList totals were available. Refresh them
+  // once per user/session in the background: the grid updates row by row and a
+  // failed lookup is simply retried on the next visit.
+  useEffect(() => {
+    if (!user?.id) {
+      totalsBackfillFor.current = null;
+      return;
+    }
+    if (previewMode || !library.length) return;
+    if (totalsBackfillFor.current === user.id) return;
+    totalsBackfillFor.current = user.id;
+    backfillTotals(library, patch => {
+      setLibrary(prev =>
+        prev.map(m => (m.id === patch.id ? { ...m, ...patch } : m))
+      );
+    }).catch(() => {});
+  }, [library, user?.id, previewMode]);
 
   if (DEV_QUERY?.has('splash')) {
     return (

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { saveMangaDetail, deleteMangaFromLibrary, saveMangaCover } from '../../api/library';
-import { mangaInfo } from '../../api/manga';
+import { saveMangaDetail, deleteMangaFromLibrary, saveMangaCover, saveMangaTotals } from '../../api/library';
+import { mangaInfo, totalsLookup } from '../../api/manga';
+import { onActivateKey } from '../../utils/a11y';
 import Avatar from '../common/Avatar';
 
 const STATUS_ICONS = {
@@ -70,6 +71,7 @@ export default function DetailView({ manga, onClose, onSaveSuccess, onDeleteSucc
   const [synopsis, setSynopsis] = useState('');
   const [metaLoading, setMetaLoading] = useState(false);
   const [coverFallback, setCoverFallback] = useState('');
+  const [totalsOverride, setTotalsOverride] = useState({ chapters: null, volumes: null });
 
   // Progress interactions ported from Hark: the pin flashes on every chapter
   // change, the stepper repeats while held, and the trail can be dragged.
@@ -122,46 +124,98 @@ export default function DetailView({ manga, onClose, onSaveSuccess, onDeleteSucc
     let active = true;
     setSynopsis(manga?.synopsis || '');
     setCoverFallback('');
+    setTotalsOverride({ chapters: null, volumes: null });
     setMetaLoading(false);
     if (!manga?.title) return undefined;
 
-    const hasSynopsis = Boolean(manga.synopsis && manga.synopsis.trim());
-    if (hasSynopsis && manga.cover) return undefined;
+    const needSynopsis = !(manga.synopsis && manga.synopsis.trim());
+    const needCover = !manga.cover;
+    const needChapters = !(Number(manga.total_chapters) > 0);
+    const needVolumes = !(Number(manga.total_volumes) > 0);
+    if (!needSynopsis && !needCover && !needChapters && !needVolumes) {
+      return undefined;
+    }
+
+    const isRealRow = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(manga.id || ''));
+    const persist = patch => {
+      if (!Object.keys(patch).length) return;
+      setTotalsOverride(prev => {
+        const next = { ...prev };
+        if (patch.total_chapters != null) next.chapters = patch.total_chapters;
+        if (patch.total_volumes != null) next.volumes = patch.total_volumes;
+        return next;
+      });
+      if (!isRealRow) return;
+      saveMangaTotals(manga.id, patch);
+      onSaveSuccess?.({ id: manga.id, ...patch });
+    };
 
     setMetaLoading(true);
-    mangaInfo(manga.title)
-      .then(info => {
-        if (!active || !info) return;
-        if (!hasSynopsis && info.synopsis) setSynopsis(info.synopsis);
-        if (!manga.cover && info.images?.jpg?.image_url) {
-          const url = info.images.jpg.image_url;
-          setCoverFallback(url);
-          // Persist so the library grid heals too, but only for real rows.
-          if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(manga.id || ''))) {
-            saveMangaCover(manga.id, url);
-            onSaveSuccess?.({ id: manga.id, cover: url });
+    (async () => {
+      try {
+        const info = await mangaInfo(manga.title);
+        if (!active) return;
+
+        if (info) {
+          if (needSynopsis && info.synopsis) setSynopsis(info.synopsis);
+          if (needCover && info.images?.jpg?.image_url) {
+            const url = info.images.jpg.image_url;
+            setCoverFallback(url);
+            // Persist so the library grid heals too, but only for real rows.
+            if (isRealRow) {
+              saveMangaCover(manga.id, url);
+              onSaveSuccess?.({ id: manga.id, cover: url });
+            }
           }
         }
-      })
-      .catch(() => {})
-      .finally(() => { if (active) setMetaLoading(false); });
+
+        let chapters = needChapters ? (info?.chapters ?? null) : null;
+        let volumes = needVolumes ? (info?.volumes ?? null) : null;
+        const fromAniList = {};
+        if (chapters != null && chapters > 0) fromAniList.total_chapters = chapters;
+        if (volumes != null && volumes > 0) fromAniList.total_volumes = volumes;
+        persist(fromAniList);
+
+        // AniList leaves volumes/chapters empty for some titles: ask the
+        // MangaDex/Kitsu/Jikan aggregate only for the fields still missing.
+        if ((needChapters && chapters == null) || (needVolumes && volumes == null)) {
+          const totals = await totalsLookup(manga.title, chapters, volumes);
+          if (!active) return;
+          const fallback = {};
+          if (needChapters && chapters == null && totals.chapters != null) {
+            fallback.total_chapters = totals.chapters;
+          }
+          if (needVolumes && volumes == null && totals.volumes != null) {
+            fallback.total_volumes = totals.volumes;
+          }
+          persist(fallback);
+        }
+      } catch {
+        /* the detail view still works without enrichment */
+      } finally {
+        if (active) setMetaLoading(false);
+      }
+    })();
 
     return () => { active = false; };
   }, [manga]);
+
+  const currentStatusObj = STATUS_OPTIONS.find(s => s.key === statusKey) || STATUS_OPTIONS[0];
+  const totalCh = totalsOverride.chapters ?? (Number(manga?.total_chapters) || null);
+  const totalVol = totalsOverride.volumes ?? (Number(manga?.total_volumes) || null);
+  const pct = totalCh ? Math.min(100, Math.round(((chapters || 0) / totalCh) * 100)) : 0;
 
   const handleStatusChange = (key) => {
     setStatusKey(key);
     const sObj = STATUS_OPTIONS.find(s => s.key === key);
     if (sObj?.dbStatus === 'Completati') {
-      const total = Number(manga?.total_chapters) || 0;
-      const totalVol = Number(manga?.total_volumes) || 0;
-      if (total && (!chapters || chapters < total)) setChapters(total);
+      if (totalCh && (!chapters || chapters < totalCh)) setChapters(totalCh);
       if (totalVol && (!volumes || volumes < totalVol)) setVolumes(totalVol);
     }
   };
 
   const clampChapter = (value) => {
-    const max = Number(manga?.total_chapters) || 9999;
+    const max = totalCh || 9999;
     return Math.max(0, Math.min(max, value));
   };
 
@@ -187,7 +241,7 @@ export default function DetailView({ manga, onClose, onSaveSuccess, onDeleteSucc
   const handleHoldEnd = () => stopHold();
 
   const setChaptersFromX = (clientX) => {
-    const total = Number(manga?.total_chapters) || 0;
+    const total = totalCh || 0;
     const trail = trailRef.current;
     if (!total || !trail) return;
     const rect = trail.getBoundingClientRect();
@@ -197,7 +251,7 @@ export default function DetailView({ manga, onClose, onSaveSuccess, onDeleteSucc
   };
 
   const handleTrailDown = (event) => {
-    if (!manga?.total_chapters) return;
+    if (!totalCh) return;
     try {
       event.currentTarget.setPointerCapture?.(event.pointerId);
     } catch {
@@ -219,10 +273,6 @@ export default function DetailView({ manga, onClose, onSaveSuccess, onDeleteSucc
     setDragging(false);
     flashPin();
   };
-
-  const currentStatusObj = STATUS_OPTIONS.find(s => s.key === statusKey) || STATUS_OPTIONS[0];
-  const totalCh = Number(manga?.total_chapters) || null;
-  const pct = totalCh ? Math.min(100, Math.round(((chapters || 0) / totalCh) * 100)) : 0;
 
   const handleSave = async () => {
     if (!manga || saving || saved) return;
@@ -270,7 +320,14 @@ export default function DetailView({ manga, onClose, onSaveSuccess, onDeleteSucc
   return (
     <div className={`ov ${manga ? 'open' : ''}`} id="det">
       <div className="top">
-        <span className="bk" id="detback" onClick={onClose}>
+        <span
+          className="bk"
+          id="detback"
+          role="button"
+          tabIndex={0}
+          onClick={onClose}
+          onKeyDown={onActivateKey(onClose)}
+        >
           ← Indietro
         </span>
         <span className="tt" id="dtt">
@@ -316,7 +373,11 @@ export default function DetailView({ manga, onClose, onSaveSuccess, onDeleteSucc
                   className={`stato ${active ? 'on' : ''}`}
                   data-s={opt.key}
                   style={{ '--c': opt.color }}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={active}
                   onClick={() => handleStatusChange(opt.key)}
+                  onKeyDown={onActivateKey(() => handleStatusChange(opt.key))}
                 >
                   <div className="ic">
                     <svg viewBox="0 0 24 24">{STATUS_ICONS[opt.key]}</svg>
@@ -378,6 +439,7 @@ export default function DetailView({ manga, onClose, onSaveSuccess, onDeleteSucc
                   +
                 </button>
               </div>
+              <span className="tot">{totalVol ? `/ ${totalVol}` : '/ ?'}</span>
             </div>
 
             <div className="big">
@@ -420,7 +482,11 @@ export default function DetailView({ manga, onClose, onSaveSuccess, onDeleteSucc
                 <span
                   key={val}
                   className={val <= score ? 'on' : ''}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Voto ${val} su 10`}
                   onClick={() => setScore(val === score ? 0 : val)}
+                  onKeyDown={onActivateKey(() => setScore(val === score ? 0 : val))}
                 >
                   ★
                 </span>

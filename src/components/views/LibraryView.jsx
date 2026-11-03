@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { onActivateKey } from '../../utils/a11y';
 
 const STATUS_MAP = {
   all: { label: 'Tutti', db: null, height: '100%', bg: 'var(--ink)', color: 'var(--bg)' },
@@ -147,7 +148,11 @@ export default function LibraryView({ isActive, library = [], loading = false, o
                   background: info.bg,
                   color: info.color
                 }}
+                role="button"
+                tabIndex={0}
+                aria-pressed={active}
                 onClick={() => setStatusKey(key)}
+                onKeyDown={onActivateKey(() => setStatusKey(key))}
               >
                 <span className="w">{info.label}</span>
                 <b>{counts[key] || (key === 'all' ? 0 : '–')}</b>
@@ -163,7 +168,11 @@ export default function LibraryView({ isActive, library = [], loading = false, o
               key={g}
               className={genre === g ? 'on' : ''}
               data-g={g}
+              role="button"
+              tabIndex={0}
+              aria-pressed={genre === g}
               onClick={() => setGenre(g)}
+              onKeyDown={onActivateKey(() => setGenre(g))}
             >
               {g === 'all' ? 'Tutti' : g}
             </div>
@@ -172,7 +181,15 @@ export default function LibraryView({ isActive, library = [], loading = false, o
 
         {/* Sort and Count bar */}
         <div className="lbt">
-          <div className="s" id="sortbtn" onClick={toggleSort}>
+          <div
+            className="s"
+            id="sortbtn"
+            role="button"
+            tabIndex={0}
+            aria-label="Cambia ordinamento"
+            onClick={toggleSort}
+            onKeyDown={onActivateKey(toggleSort)}
+          >
             Ordina per <b id="sortlbl">{SORTS[sortI][0]}</b> ▾
           </div>
           <span className="c" id="libcnt">
@@ -237,10 +254,19 @@ export default function LibraryView({ isActive, library = [], loading = false, o
                 key={m.id || idx}
                 className="tile press"
                 style={{ animationDelay: `${idx * 45}ms` }}
+                role="button"
+                tabIndex={0}
+                aria-label={`Apri ${m.title || 'manga'}`}
                 onClick={() => onSelectManga?.(m)}
+                onKeyDown={onActivateKey(() => onSelectManga?.(m))}
               >
                 <div className="cv">
-                  <img src={m.cover || ''} alt={m.title || 'Copertina manga'} />
+                  <img
+                    src={m.cover || ''}
+                    alt={m.title || 'Copertina manga'}
+                    loading="lazy"
+                    decoding="async"
+                  />
                   <span className={`badge ${badgeClass} tb2`}>{badgeLabel}</span>
                   {Number(m.score) > 0 && <span className="rt">★ {m.score}</span>}
                   <div className="bt">
