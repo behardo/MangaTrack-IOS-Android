@@ -6,6 +6,9 @@ const KITSU_TIMEOUT_MS = 8000;
 // Totals are a nice-to-have enrichment. Keep every provider on a short leash so
 // one slow API can never hold up adding a manga to the library.
 const TOTALS_TIMEOUT_MS = 2500;
+// The serverless aggregate asks three providers in parallel, so give it a
+// little more room than a single direct provider call.
+const SERVER_TOTALS_TIMEOUT_MS = 6000;
 
 async function timedFetch(url, options = {}, timeoutMs = 8000) {
   const controller = new AbortController();
@@ -129,7 +132,7 @@ export async function jikanLookup(title) {
    senza `vercel dev`) ripiega sulle chiamate dirette dal browser. */
 async function serverTotals(title) {
   try {
-    const res = await timedFetch(`/api/totals?title=${encodeURIComponent(title)}`, {}, TOTALS_TIMEOUT_MS + 500);
+    const res = await timedFetch(`/api/totals?title=${encodeURIComponent(title)}`, {}, SERVER_TOTALS_TIMEOUT_MS);
     if (!res.ok || !(res.headers.get("content-type") || "").includes("json")) return null;
     return await res.json();
   } catch {

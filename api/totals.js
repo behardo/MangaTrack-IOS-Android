@@ -12,7 +12,7 @@
  *    chiamate verso API esterne con limiti di frequenza.
  */
 
-const TIMEOUT_MS = 2500;
+const TIMEOUT_MS = 5000;
 const CACHE = new Map();          // cache in memoria dell'istanza
 const CACHE_TTL_MS = 60 * 60 * 1000;
 
