@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { addMangaFromPreview } from '../../api/library';
-import { mangaInfo } from '../../api/manga';
+import { mangaInfo, totalsLookup } from '../../api/manga';
 
 export default function PreviewSheet({ manga, library = [], onClose, onAddSuccess, onOpenDetail, onToast }) {
   const { user } = useAuth();
@@ -9,12 +9,14 @@ export default function PreviewSheet({ manga, library = [], onClose, onAddSucces
   const [adding, setAdding] = useState(false);
   const [meta, setMeta] = useState(null);
   const [metaLoading, setMetaLoading] = useState(false);
+  const [totals, setTotals] = useState({ chapters: null, volumes: null });
 
   const title = manga?.title_english || manga?.title || 'Manga';
   const cover = manga?.images?.jpg?.image_url || manga?.cover || meta?.images?.jpg?.image_url || '';
   const score = manga?.score || meta?.score || (manga?.meanScore ? (manga.meanScore / 10).toFixed(1) : '–');
-  const chapters = manga?.chapters || meta?.chapters || '–';
-  const volumes = manga?.volumes || meta?.volumes || '–';
+  const positive = value => (Number(value) > 0 ? Number(value) : null);
+  const chapters = positive(manga?.chapters) ?? positive(meta?.chapters) ?? totals.chapters ?? '–';
+  const volumes = positive(manga?.volumes) ?? positive(meta?.volumes) ?? totals.volumes ?? '–';
   const type = manga?.type || meta?.type || 'Manga';
   const genres = manga?.genres?.length
     ? manga.genres.map(g => (typeof g === 'string' ? g : g.name))
@@ -54,6 +56,43 @@ export default function PreviewSheet({ manga, library = [], onClose, onAddSucces
     return () => { active = false; };
   }, [manga?.title, manga?.title_english, manga?.synopsis, manga?.cover, manga?.images?.jpg?.image_url]);
 
+  // Search results often arrive without totals, especially for ongoing manhwa
+  // and titles AniList does not count. Fill them on demand like the detail
+  // view: AniList first, then the MangaDex/Kitsu/Jikan/MangaUpdates aggregate.
+  useEffect(() => {
+    setTotals({ chapters: null, volumes: null });
+    if (!manga) return undefined;
+
+    const baseChapters = positive(manga.chapters);
+    const baseVolumes = positive(manga.volumes);
+    if (baseChapters != null && baseVolumes != null) return undefined;
+
+    let active = true;
+    (async () => {
+      const info = await mangaInfo(manga.title_english || manga.title);
+      if (!active) return;
+      const fromAniListChapters = positive(info?.chapters) ?? baseChapters;
+      const fromAniListVolumes = positive(info?.volumes) ?? baseVolumes;
+      if (fromAniListChapters != null && fromAniListVolumes != null) {
+        setTotals({ chapters: fromAniListChapters, volumes: fromAniListVolumes });
+        return;
+      }
+
+      const found = await totalsLookup(
+        manga.title_english || manga.title,
+        fromAniListChapters,
+        fromAniListVolumes
+      );
+      if (!active) return;
+      setTotals({
+        chapters: positive(found.chapters),
+        volumes: positive(found.volumes)
+      });
+    })().catch(() => {});
+
+    return () => { active = false; };
+  }, [manga?.title, manga?.title_english, manga?.chapters, manga?.volumes]);
+
   // The sheet stays mounted between titles; never carry "Leggi tutto" or a
   // busy state from the previous manga into the next one.
   useEffect(() => {
@@ -75,7 +114,14 @@ export default function PreviewSheet({ manga, library = [], onClose, onAddSucces
 
     setAdding(true);
     try {
-      const created = await addMangaFromPreview(manga, user.id, library);
+      // Use the totals just found so the new row is complete immediately; the
+      // background enrichment would otherwise repeat the same lookup.
+      const enrichedManga = {
+        ...manga,
+        chapters: chapters === '–' ? manga.chapters : Number(chapters),
+        volumes: volumes === '–' ? manga.volumes : Number(volumes)
+      };
+      const created = await addMangaFromPreview(enrichedManga, user.id, library);
       onToast?.(`"${title}" aggiunto alla libreria!`);
       onAddSuccess?.(created);
       onClose();

@@ -3,9 +3,9 @@
  *
  * Logica lato server per arricchire un manga con il numero totale di
  * capitoli e volumi. Interroga in parallelo MangaDex, Kitsu e Jikan, tiene il
- * valore più alto trovato e mette in cache la risposta. Se le fonti principali
- * non conoscono il titolo, cerca su MangaUpdates (che copre anche serie
- * pubblicate solo in Giappone o fuori catalogo).
+ * valore più alto trovato e mette in cache la risposta. Integra anche
+ * MangaUpdates: copre le serie assenti dalle altre fonti e, per le serie in
+ * corso, ha spesso un conteggio capitoli più aggiornato di MangaDex.
  *
  * Perché sul server:
  *  - il browser fa una sola richiesta invece di tre;
@@ -99,9 +99,10 @@ async function jikan(title) {
 const normalizeTitle = value =>
   (value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 
-// Last-resort search: MangaUpdates covers many series that are missing from
-// MangaDex/Kitsu/Jikan. The search response has no totals, so fetch the series
-// detail only when the primary sources left a field empty.
+// Search MangaUpdates: it covers many series that are missing from
+// MangaDex/Kitsu/Jikan and often has a more complete chapter count for ongoing
+// series. The search response has no totals, so the detail is fetched by the
+// helper below.
 async function mangaupdatesSearch(title) {
   const d = await timedJson(
     'https://api.mangaupdates.com/v1/series/search',
@@ -116,11 +117,12 @@ async function mangaupdatesSearch(title) {
   const rows = d?.results || [];
   if (!rows.length) return null;
   const wanted = normalizeTitle(title);
-  const best = rows.find(r =>
+  const exact = rows.find(r =>
     normalizeTitle(r?.record?.title) === wanted || normalizeTitle(r?.hit_title) === wanted
-  ) || rows[0];
+  );
+  const best = exact || rows[0];
   return best?.record?.series_id
-    ? { id: best.record.series_id, title: best.record.title }
+    ? { id: best.record.series_id, title: best.record.title, exact: Boolean(exact) }
     : null;
 }
 
@@ -137,6 +139,13 @@ async function mangaupdatesDetail(candidate) {
     chapters: toInt(d?.latest_chapter),
     volumes
   };
+}
+
+async function mangaupdates(title) {
+  const candidate = await mangaupdatesSearch(title);
+  if (!candidate) return null;
+  const detail = await mangaupdatesDetail(candidate);
+  return detail ? { ...candidate, ...detail } : null;
 }
 
 export function mergeTotals(results) {
@@ -164,32 +173,42 @@ export default async function handler(req, res) {
 
   // Version the key so a deploy that fixes a provider does not keep serving an
   // old empty/wrong aggregate from a warm instance or the CDN.
-  const key = `v3:${title.toLowerCase()}`;
+  const key = `v4:${title.toLowerCase()}`;
   const hit = CACHE.get(key);
   if (hit && Date.now() - hit.at < CACHE_TTL_MS) {
     res.setHeader('X-Cache', 'HIT');
     return res.status(200).json(hit.body);
   }
 
-  const results = await Promise.all([mangadex(title), kitsu(title), jikan(title)]);
+  // MangaUpdates runs together with the main providers: for ongoing series
+  // MangaDex often reports only the uploaded chapters, while MangaUpdates has
+  // the current chapter count. Its volumes are used only when the primary
+  // sources have none (MangaUpdates can overcount volumes for some series).
+  const [results, fallback] = await Promise.all([
+    Promise.all([mangadex(title), kitsu(title), jikan(title)]),
+    mangaupdates(title)
+  ]);
   const totals = mergeTotals(results);
 
-  if (totals.chapters == null || totals.volumes == null) {
-    const candidate = await mangaupdatesSearch(title);
-    if (candidate) {
-      const fallback = await mangaupdatesDetail(candidate);
-      const fallbackChapters = toInt(fallback?.chapters);
-      const fallbackVolumes = toInt(fallback?.volumes);
-      if (totals.chapters == null && fallbackChapters != null) {
-        totals.chapters = fallbackChapters;
-      }
-      if (totals.volumes == null && fallbackVolumes != null) {
-        totals.volumes = fallbackVolumes;
-      }
-      if (fallbackChapters != null || fallbackVolumes != null) {
-        results.push(fallback);
-      }
+  if (fallback) {
+    const fallbackChapters = toInt(fallback.chapters);
+    const fallbackVolumes = toInt(fallback.volumes);
+    let used = false;
+
+    // Only an exact title match may raise an already-known chapter count:
+    // a fuzzy match could be an unrelated series.
+    if (
+      fallbackChapters != null &&
+      (totals.chapters == null || (fallback.exact && fallbackChapters > totals.chapters))
+    ) {
+      totals.chapters = fallbackChapters;
+      used = true;
     }
+    if (totals.volumes == null && fallbackVolumes != null) {
+      totals.volumes = fallbackVolumes;
+      used = true;
+    }
+    if (used) results.push(fallback);
   }
 
   const body = {

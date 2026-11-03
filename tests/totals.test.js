@@ -99,6 +99,77 @@ test('handler usa MangaUpdates quando le fonti principali non trovano i totali',
   assert.deepEqual(res.body.sources, ['mangaupdates']);
 });
 
+test('handler alza i capitoli con MangaUpdates ma conserva i volumi primari', async t => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+
+  globalThis.fetch = async url => {
+    const target = String(url);
+    let payload;
+    if (target.includes('mangadex')) {
+      payload = { data: [{ id: 'md-myst', attributes: { lastChapter: '73', lastVolume: '1' } }] };
+    } else if (target.includes('kitsu') || target.includes('jikan')) {
+      payload = { data: [] };
+    } else if (target.includes('mangaupdates.com/v1/series/search')) {
+      payload = {
+        results: [
+          {
+            record: { series_id: 'mu-myst', title: 'Myst, Might, Mayhem' },
+            hit_title: 'Myst, Might, Mayhem'
+          }
+        ]
+      };
+    } else if (target.includes('mangaupdates.com/v1/series/mu-myst')) {
+      payload = { status: '121 Chapters (Ongoing)', latest_chapter: 123 };
+    } else {
+      payload = { data: [] };
+    }
+    return { ok: true, json: async () => payload };
+  };
+
+  const res = makeRes();
+  await handler({ method: 'GET', query: { title: 'Myst, Might, Mayhem' } }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.chapters, 123);
+  assert.equal(res.body.volumes, 1);
+  assert.deepEqual(res.body.sources, ['mangadex', 'mangaupdates']);
+});
+
+test('handler non sostituisce i totali primari con valori MangaUpdates più bassi', async t => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+
+  globalThis.fetch = async url => {
+    const target = String(url);
+    let payload;
+    if (target.includes('mangadex')) {
+      payload = { data: [{ id: 'md-real', attributes: { lastChapter: '106', lastVolume: '15' } }] };
+    } else if (target.includes('kitsu') || target.includes('jikan')) {
+      payload = { data: [] };
+    } else if (target.includes('mangaupdates.com/v1/series/search')) {
+      payload = {
+        results: [
+          { record: { series_id: 'mu-real', title: 'Real' }, hit_title: 'Real' }
+        ]
+      };
+    } else if (target.includes('mangaupdates.com/v1/series/mu-real')) {
+      payload = { status: '17 Volumes (Ongoing)', latest_chapter: 105 };
+    } else {
+      payload = { data: [] };
+    }
+    return { ok: true, json: async () => payload };
+  };
+
+  const res = makeRes();
+  await handler({ method: 'GET', query: { title: 'Real' } }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.chapters, 106);
+  assert.equal(res.body.volumes, 15);
+  assert.deepEqual(res.body.sources, ['mangadex']);
+});
+
 test('handler rifiuta i metodi diversi da GET', async () => {
   const res = makeRes();
   await handler({ method: 'POST', query: {} }, res);

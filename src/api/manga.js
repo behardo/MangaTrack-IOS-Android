@@ -132,7 +132,7 @@ export async function jikanLookup(title) {
    senza `vercel dev`) ripiega sulle chiamate dirette dal browser. */
 async function serverTotals(title) {
   try {
-    const res = await timedFetch(`/api/totals?title=${encodeURIComponent(title)}&v=3`, {}, SERVER_TOTALS_TIMEOUT_MS);
+    const res = await timedFetch(`/api/totals?title=${encodeURIComponent(title)}&v=4`, {}, SERVER_TOTALS_TIMEOUT_MS);
     if (!res.ok || !(res.headers.get("content-type") || "").includes("json")) return null;
     return await res.json();
   } catch {
