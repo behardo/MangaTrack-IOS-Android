@@ -8,7 +8,7 @@ const KITSU_TIMEOUT_MS = 8000;
 const TOTALS_TIMEOUT_MS = 2500;
 // The serverless aggregate asks three providers in parallel, so give it a
 // little more room than a single direct provider call.
-const SERVER_TOTALS_TIMEOUT_MS = 6000;
+const SERVER_TOTALS_TIMEOUT_MS = 8000;
 
 async function timedFetch(url, options = {}, timeoutMs = 8000) {
   const controller = new AbortController();

@@ -36,6 +36,35 @@ test('mergeTotals ignora zero e valori non validi', () => {
   );
 });
 
+test('handler ricava i totali da MangaDex aggregate per le serie in corso', async t => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+
+  globalThis.fetch = async url => {
+    const target = String(url);
+    const payload = target.includes('/aggregate')
+      ? {
+          volumes: {
+            '1': { chapters: { '1': {}, '2': {} } },
+            '2': { chapters: { '3': {}, '4': {} } },
+            none: { chapters: { '99': {} } }
+          }
+        }
+      : target.includes('mangadex')
+        ? { data: [{ id: 'manga-1', attributes: { lastChapter: '', lastVolume: '' } }] }
+        : { data: [] };
+    return { ok: true, json: async () => payload };
+  };
+
+  const res = makeRes();
+  await handler({ method: 'GET', query: { title: `Aggregate ${Date.now()}` } }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.chapters, 99);
+  assert.equal(res.body.volumes, 2);
+  assert.deepEqual(res.body.sources, ['mangadex']);
+});
+
 test('handler rifiuta i metodi diversi da GET', async () => {
   const res = makeRes();
   await handler({ method: 'POST', query: {} }, res);

@@ -12,13 +12,14 @@
  *    chiamate verso API esterne con limiti di frequenza.
  */
 
-const TIMEOUT_MS = 5000;
+const TIMEOUT_MS = 4000;
+const AGGREGATE_TIMEOUT_MS = 3000;
 const CACHE = new Map();          // cache in memoria dell'istanza
 const CACHE_TTL_MS = 60 * 60 * 1000;
 
-async function timedJson(url, headers = {}) {
+async function timedJson(url, headers = {}, timeoutMs = TIMEOUT_MS) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const res = await fetch(url, { headers, signal: controller.signal });
     if (!res.ok) return null;
@@ -35,12 +36,46 @@ const toInt = v => {
   return Number.isFinite(n) && n > 0 ? n : null;
 };
 
+// MangaDex leaves lastChapter/lastVolume empty for many ongoing series. Its
+// aggregate endpoint still lists the published volumes, so derive the totals
+// from there before giving up.
+function maxVolume(aggregate) {
+  const keys = Object.keys(aggregate?.volumes || {})
+    .filter(key => key !== 'none' && Number.isFinite(Number(key)));
+  return keys.length ? Math.max(...keys.map(Number)) : null;
+}
+
+function maxChapter(aggregate) {
+  let max = null;
+  for (const volume of Object.values(aggregate?.volumes || {})) {
+    for (const key of Object.keys(volume?.chapters || {})) {
+      const n = Number(key);
+      if (Number.isFinite(n) && (max == null || n > max)) max = n;
+    }
+  }
+  return max;
+}
+
 async function mangadex(title) {
   const d = await timedJson(
     `https://api.mangadex.org/manga?title=${encodeURIComponent(title)}&limit=1&order[relevance]=desc`
   );
-  const a = d?.data?.[0]?.attributes;
-  return { source: 'mangadex', chapters: toInt(a?.lastChapter), volumes: toInt(a?.lastVolume) };
+  const manga = d?.data?.[0];
+  const a = manga?.attributes;
+  let chapters = toInt(a?.lastChapter);
+  let volumes = toInt(a?.lastVolume);
+
+  if (manga?.id && (chapters == null || volumes == null)) {
+    const aggregate = await timedJson(
+      `https://api.mangadex.org/manga/${manga.id}/aggregate`,
+      {},
+      AGGREGATE_TIMEOUT_MS
+    );
+    if (chapters == null) chapters = maxChapter(aggregate);
+    if (volumes == null) volumes = maxVolume(aggregate);
+  }
+
+  return { source: 'mangadex', chapters, volumes };
 }
 
 async function kitsu(title) {
