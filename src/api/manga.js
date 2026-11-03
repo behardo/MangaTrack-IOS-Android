@@ -150,8 +150,8 @@ export async function totalsLookup(title, baseChapters = null, baseVolumes = nul
   let volumes = baseVolumes ?? null;
 
   results.forEach(r => {
-    if (r.chapters != null && (chapters == null || r.chapters > chapters)) chapters = r.chapters;
-    if (r.volumes != null && (volumes == null || r.volumes > volumes)) volumes = r.volumes;
+    if (r.chapters != null && r.chapters > 0 && (chapters == null || r.chapters > chapters)) chapters = r.chapters;
+    if (r.volumes != null && r.volumes > 0 && (volumes == null || r.volumes > volumes)) volumes = r.volumes;
   });
 
   return { chapters, volumes };

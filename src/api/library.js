@@ -89,10 +89,10 @@ export async function addMangaFromPreview(previewManga, userId, currentLib = [],
     totalsLookup(title, totalCh, totalVol)
       .then(totals => {
         const patch = {};
-        if (totalCh == null && totals.chapters != null) {
+        if (totalCh == null && totals.chapters != null && totals.chapters > 0) {
           patch.total_chapters = totals.chapters;
         }
-        if (totalVol == null && totals.volumes != null) {
+        if (totalVol == null && totals.volumes != null && totals.volumes > 0) {
           patch.total_volumes = totals.volumes;
         }
         if (!Object.keys(patch).length) return null;

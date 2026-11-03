@@ -25,6 +25,17 @@ test('mergeTotals prende il valore più alto per capitoli e volumi', () => {
   );
 });
 
+test('mergeTotals ignora zero e valori non validi', () => {
+  assert.deepEqual(
+    mergeTotals([
+      { chapters: 0, volumes: 0 },
+      { chapters: null, volumes: '12' },
+      { chapters: '98', volumes: undefined }
+    ]),
+    { chapters: 98, volumes: 12 }
+  );
+});
+
 test('handler rifiuta i metodi diversi da GET', async () => {
   const res = makeRes();
   await handler({ method: 'POST', query: {} }, res);

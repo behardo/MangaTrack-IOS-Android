@@ -182,10 +182,10 @@ export default function DetailView({ manga, onClose, onSaveSuccess, onDeleteSucc
           const totals = await totalsLookup(manga.title, chapters, volumes);
           if (!active) return;
           const fallback = {};
-          if (needChapters && chapters == null && totals.chapters != null) {
+          if (needChapters && chapters == null && totals.chapters != null && totals.chapters > 0) {
             fallback.total_chapters = totals.chapters;
           }
-          if (needVolumes && volumes == null && totals.volumes != null) {
+          if (needVolumes && volumes == null && totals.volumes != null && totals.volumes > 0) {
             fallback.total_volumes = totals.volumes;
           }
           persist(fallback);

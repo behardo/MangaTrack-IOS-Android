@@ -32,7 +32,7 @@ async function timedJson(url, headers = {}) {
 
 const toInt = v => {
   const n = parseInt(v, 10);
-  return Number.isFinite(n) ? n : null;
+  return Number.isFinite(n) && n > 0 ? n : null;
 };
 
 async function mangadex(title) {
@@ -49,21 +49,23 @@ async function kitsu(title) {
     { Accept: 'application/vnd.api+json' }
   );
   const a = d?.data?.[0]?.attributes;
-  return { source: 'kitsu', chapters: a?.chapterCount ?? null, volumes: a?.volumeCount ?? null };
+  return { source: 'kitsu', chapters: toInt(a?.chapterCount), volumes: toInt(a?.volumeCount) };
 }
 
 async function jikan(title) {
   const d = await timedJson(`https://api.jikan.moe/v4/manga?q=${encodeURIComponent(title)}&limit=1`);
   const a = d?.data?.[0];
-  return { source: 'jikan', chapters: a?.chapters ?? null, volumes: a?.volumes ?? null };
+  return { source: 'jikan', chapters: toInt(a?.chapters), volumes: toInt(a?.volumes) };
 }
 
 export function mergeTotals(results) {
   let chapters = null;
   let volumes = null;
   for (const r of results) {
-    if (r.chapters != null && (chapters == null || r.chapters > chapters)) chapters = r.chapters;
-    if (r.volumes != null && (volumes == null || r.volumes > volumes)) volumes = r.volumes;
+    const ch = toInt(r.chapters);
+    const vol = toInt(r.volumes);
+    if (ch != null && (chapters == null || ch > chapters)) chapters = ch;
+    if (vol != null && (volumes == null || vol > volumes)) volumes = vol;
   }
   return { chapters, volumes };
 }
@@ -87,10 +89,13 @@ export default async function handler(req, res) {
   }
 
   const results = await Promise.all([mangadex(title), kitsu(title), jikan(title)]);
+  const totals = mergeTotals(results);
   const body = {
     title,
-    ...mergeTotals(results),
-    sources: results.filter(r => r.chapters != null || r.volumes != null).map(r => r.source)
+    ...totals,
+    sources: results
+      .filter(r => toInt(r.chapters) != null || toInt(r.volumes) != null)
+      .map(r => r.source)
   };
 
   // Non salva in cache un risultato vuoto (es. API temporaneamente giù)
