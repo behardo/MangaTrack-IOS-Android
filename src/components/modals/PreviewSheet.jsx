@@ -15,8 +15,8 @@ export default function PreviewSheet({ manga, library = [], onClose, onAddSucces
   const cover = manga?.images?.jpg?.image_url || manga?.cover || meta?.images?.jpg?.image_url || '';
   const score = manga?.score || meta?.score || (manga?.meanScore ? (manga.meanScore / 10).toFixed(1) : '–');
   const positive = value => (Number(value) > 0 ? Number(value) : null);
-  const chapters = positive(manga?.chapters) ?? positive(meta?.chapters) ?? totals.chapters ?? '–';
-  const volumes = positive(manga?.volumes) ?? positive(meta?.volumes) ?? totals.volumes ?? '–';
+  const chapters = totals.chapters ?? positive(manga?.chapters) ?? positive(meta?.chapters) ?? '–';
+  const volumes = totals.volumes ?? positive(manga?.volumes) ?? positive(meta?.volumes) ?? '–';
   const type = manga?.type || meta?.type || 'Manga';
   const genres = manga?.genres?.length
     ? manga.genres.map(g => (typeof g === 'string' ? g : g.name))
@@ -30,68 +30,49 @@ export default function PreviewSheet({ manga, library = [], onClose, onAddSucces
 
   const existingManga = library.find(m => m.title === title);
 
-  // Feed and recommendations open the sheet with only a title/cover, so the
-  // synopsis and the artwork are fetched on demand from AniList.
+  // Feed and recommendations open the sheet with only a title/cover, while
+  // search results may lack totals. Fetch only what is missing, and run the
+  // AniList metadata lookup and the totals aggregate together: the old code
+  // waited for AniList first and then for the server, doubling the wait.
   useEffect(() => {
     setMeta(null);
-    if (!manga) {
-      setMetaLoading(false);
-      return undefined;
-    }
-
-    const hasSynopsis = Boolean(manga.synopsis && manga.synopsis.trim());
-    const hasCover = Boolean(manga.images?.jpg?.image_url || manga.cover);
-    if (hasSynopsis && hasCover) {
-      setMetaLoading(false);
-      return undefined;
-    }
-
-    let active = true;
-    setMetaLoading(true);
-    mangaInfo(manga.title_english || manga.title)
-      .then(info => { if (active) setMeta(info); })
-      .catch(() => {})
-      .finally(() => { if (active) setMetaLoading(false); });
-
-    return () => { active = false; };
-  }, [manga?.title, manga?.title_english, manga?.synopsis, manga?.cover, manga?.images?.jpg?.image_url]);
-
-  // Search results often arrive without totals, especially for ongoing manhwa
-  // and titles AniList does not count. Fill them on demand like the detail
-  // view: AniList first, then the MangaDex/Kitsu/Jikan/MangaUpdates aggregate.
-  useEffect(() => {
     setTotals({ chapters: null, volumes: null });
+    setMetaLoading(false);
     if (!manga) return undefined;
 
+    const lookupTitle = manga.title_english || manga.title;
+    const hasSynopsis = Boolean(manga.synopsis && manga.synopsis.trim());
+    const hasCover = Boolean(manga.images?.jpg?.image_url || manga.cover);
     const baseChapters = positive(manga.chapters);
     const baseVolumes = positive(manga.volumes);
-    if (baseChapters != null && baseVolumes != null) return undefined;
+    const needMeta = !hasSynopsis || !hasCover;
+    const needTotals = baseChapters == null || baseVolumes == null;
+    if (!needMeta && !needTotals) return undefined;
 
     let active = true;
+    setMetaLoading(needMeta);
     (async () => {
-      const info = await mangaInfo(manga.title_english || manga.title);
+      const [info, found] = await Promise.all([
+        needMeta ? mangaInfo(lookupTitle) : Promise.resolve(null),
+        needTotals ? totalsLookup(lookupTitle, baseChapters, baseVolumes) : Promise.resolve(null)
+      ]);
       if (!active) return;
-      const fromAniListChapters = positive(info?.chapters) ?? baseChapters;
-      const fromAniListVolumes = positive(info?.volumes) ?? baseVolumes;
-      if (fromAniListChapters != null && fromAniListVolumes != null) {
-        setTotals({ chapters: fromAniListChapters, volumes: fromAniListVolumes });
-        return;
-      }
 
-      const found = await totalsLookup(
-        manga.title_english || manga.title,
-        fromAniListChapters,
-        fromAniListVolumes
-      );
-      if (!active) return;
+      if (info) setMeta(info);
+      const maxPositive = (...values) => {
+        const numbers = values.map(positive).filter(value => value != null);
+        return numbers.length ? Math.max(...numbers) : null;
+      };
       setTotals({
-        chapters: positive(found.chapters),
-        volumes: positive(found.volumes)
+        chapters: maxPositive(baseChapters, info?.chapters, found?.chapters),
+        volumes: maxPositive(baseVolumes, info?.volumes, found?.volumes)
       });
-    })().catch(() => {});
+    })().catch(() => {}).finally(() => {
+      if (active) setMetaLoading(false);
+    });
 
     return () => { active = false; };
-  }, [manga?.title, manga?.title_english, manga?.chapters, manga?.volumes]);
+  }, [manga?.title, manga?.title_english, manga?.chapters, manga?.volumes, manga?.synopsis, manga?.cover, manga?.images?.jpg?.image_url]);
 
   // The sheet stays mounted between titles; never carry "Leggi tutto" or a
   // busy state from the previous manga into the next one.

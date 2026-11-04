@@ -14,13 +14,17 @@
  *    chiamate verso API esterne con limiti di frequenza.
  */
 
-const TIMEOUT_MS = 4000;
-const AGGREGATE_TIMEOUT_MS = 3000;
-const MANGAUPDATES_TIMEOUT_MS = 2000;
+// Keep each provider on a short leash: Jikan in particular can hang until the
+// timeout, and without this cap one slow API adds seconds to every lookup.
+const MANGADEX_TIMEOUT_MS = 2500;
+const KITSU_TIMEOUT_MS = 2000;
+const JIKAN_TIMEOUT_MS = 1200;
+const AGGREGATE_TIMEOUT_MS = 1500;
+const MANGAUPDATES_TIMEOUT_MS = 1200;
 const CACHE = new Map();          // cache in memoria dell'istanza
 const CACHE_TTL_MS = 60 * 60 * 1000;
 
-async function timedJson(url, headers = {}, timeoutMs = TIMEOUT_MS, init = {}) {
+async function timedJson(url, headers = {}, timeoutMs = MANGADEX_TIMEOUT_MS, init = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -61,7 +65,9 @@ function maxChapter(aggregate) {
 
 async function mangadex(title) {
   const d = await timedJson(
-    `https://api.mangadex.org/manga?title=${encodeURIComponent(title)}&limit=1&order[relevance]=desc`
+    `https://api.mangadex.org/manga?title=${encodeURIComponent(title)}&limit=1&order[relevance]=desc`,
+    {},
+    MANGADEX_TIMEOUT_MS
   );
   const manga = d?.data?.[0];
   const a = manga?.attributes;
@@ -84,14 +90,19 @@ async function mangadex(title) {
 async function kitsu(title) {
   const d = await timedJson(
     `https://kitsu.io/api/edge/manga?filter[text]=${encodeURIComponent(title)}&page[limit]=1`,
-    { Accept: 'application/vnd.api+json' }
+    { Accept: 'application/vnd.api+json' },
+    KITSU_TIMEOUT_MS
   );
   const a = d?.data?.[0]?.attributes;
   return { source: 'kitsu', chapters: toInt(a?.chapterCount), volumes: toInt(a?.volumeCount) };
 }
 
 async function jikan(title) {
-  const d = await timedJson(`https://api.jikan.moe/v4/manga?q=${encodeURIComponent(title)}&limit=1`);
+  const d = await timedJson(
+    `https://api.jikan.moe/v4/manga?q=${encodeURIComponent(title)}&limit=1`,
+    {},
+    JIKAN_TIMEOUT_MS
+  );
   const a = d?.data?.[0];
   return { source: 'jikan', chapters: toInt(a?.chapters), volumes: toInt(a?.volumes) };
 }

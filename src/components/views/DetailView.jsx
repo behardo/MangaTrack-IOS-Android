@@ -161,10 +161,15 @@ export default function DetailView({ manga, onClose, onSaveSuccess, onDeleteSucc
       onSaveSuccess?.({ id: manga.id, ...patch });
     };
 
-    setMetaLoading(true);
+    setMetaLoading(needSynopsis || needCover);
     (async () => {
       try {
-        const info = await mangaInfo(manga.title);
+        // Cover/synopsis (AniList) and totals (server aggregate) are independent:
+        // start both together instead of waiting for AniList before the server.
+        const [info, totals] = await Promise.all([
+          (needSynopsis || needCover) ? mangaInfo(manga.title) : Promise.resolve(null),
+          (needChapters || needVolumes) ? totalsLookup(manga.title) : Promise.resolve(null)
+        ]);
         if (!active) return;
 
         if (info) {
@@ -180,30 +185,23 @@ export default function DetailView({ manga, onClose, onSaveSuccess, onDeleteSucc
           }
         }
 
-        let chapters = needChapters ? usableTotal(info?.chapters, progressChapters) : null;
-        let volumes = needVolumes ? usableTotal(info?.volumes, progressVolumes) : null;
-        const fromAniList = {};
-        if (chapters != null) fromAniList.total_chapters = chapters;
-        if (volumes != null) fromAniList.total_volumes = volumes;
-        persist(fromAniList);
-
-        // AniList leaves volumes/chapters empty for some titles, and can pick
-        // an omonym with implausible totals: ask the aggregate for the fields
-        // still missing, rejecting values below the user's progress.
-        if ((needChapters && chapters == null) || (needVolumes && volumes == null)) {
-          const totals = await totalsLookup(manga.title, chapters, volumes);
-          if (!active) return;
-          const fallback = {};
-          if (needChapters && chapters == null) {
-            const total = usableTotal(totals.chapters, progressChapters);
-            if (total != null) fallback.total_chapters = total;
-          }
-          if (needVolumes && volumes == null) {
-            const total = usableTotal(totals.volumes, progressVolumes);
-            if (total != null) fallback.total_volumes = total;
-          }
-          persist(fallback);
+        // Keep the highest plausible total: AniList and the aggregate can each
+        // know a field the other lacks, and values below the user's progress
+        // are always rejected.
+        const patch = {};
+        if (needChapters) {
+          const fromInfo = usableTotal(info?.chapters, progressChapters);
+          const fromTotals = usableTotal(totals?.chapters, progressChapters);
+          const best = Math.max(fromInfo ?? 0, fromTotals ?? 0) || null;
+          if (best != null) patch.total_chapters = best;
         }
+        if (needVolumes) {
+          const fromInfo = usableTotal(info?.volumes, progressVolumes);
+          const fromTotals = usableTotal(totals?.volumes, progressVolumes);
+          const best = Math.max(fromInfo ?? 0, fromTotals ?? 0) || null;
+          if (best != null) patch.total_volumes = best;
+        }
+        persist(patch);
       } catch {
         /* the detail view still works without enrichment */
       } finally {

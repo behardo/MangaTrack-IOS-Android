@@ -8,7 +8,12 @@ const KITSU_TIMEOUT_MS = 8000;
 const TOTALS_TIMEOUT_MS = 2500;
 // The serverless aggregate asks three providers in parallel, so give it a
 // little more room than a single direct provider call.
-const SERVER_TOTALS_TIMEOUT_MS = 9000;
+const SERVER_TOTALS_TIMEOUT_MS = 6000;
+
+// Keep successful server totals in memory for the session. Opening the same
+// preview or detail twice then feels instant even if the CDN is cold.
+const SERVER_TOTALS_CACHE = new Map();
+const SERVER_TOTALS_TTL_MS = 60 * 60 * 1000;
 
 async function timedFetch(url, options = {}, timeoutMs = 8000) {
   const controller = new AbortController();
@@ -131,10 +136,22 @@ export async function jikanLookup(title) {
    fonti e mette in cache il risultato. Se non è disponibile (es. `npm run dev`
    senza `vercel dev`) ripiega sulle chiamate dirette dal browser. */
 async function serverTotals(title) {
+  const key = (title || "").trim().toLowerCase();
+  if (!key) return null;
+
+  const hit = SERVER_TOTALS_CACHE.get(key);
+  if (hit && Date.now() - hit.at < SERVER_TOTALS_TTL_MS) {
+    return hit.body;
+  }
+
   try {
     const res = await timedFetch(`/api/totals?title=${encodeURIComponent(title)}&v=4`, {}, SERVER_TOTALS_TIMEOUT_MS);
     if (!res.ok || !(res.headers.get("content-type") || "").includes("json")) return null;
-    return await res.json();
+    const body = await res.json();
+    if (body && (body.chapters != null || body.volumes != null)) {
+      SERVER_TOTALS_CACHE.set(key, { at: Date.now(), body });
+    }
+    return body;
   } catch {
     return null;
   }
