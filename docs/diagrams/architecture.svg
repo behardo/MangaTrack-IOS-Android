@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">Architettura di MangaTrack</title>
+  <desc id="desc">Il browser React parla con Supabase via REST e JWT, con la funzione serverless Vercel per i totali e con AniList per ricerca e metadati.</desc>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8C84A6"/>
+    </marker>
+    <style>
+      .bg { fill: #0B0714; }
+      .panel { fill: #151022; stroke: #332A4A; stroke-width: 1.5; }
+      .title { fill: #F5F1EA; font-family: "Segoe UI", Arial, sans-serif; font-size: 30px; font-weight: 800; letter-spacing: 0.5px; }
+      .subtitle { fill: #9A93AD; font-family: "Segoe UI", Arial, sans-serif; font-size: 15px; }
+      .h { fill: #F5F1EA; font-family: "Segoe UI", Arial, sans-serif; font-size: 20px; font-weight: 700; }
+      .tag { fill: #B8B0C9; font-family: "Segoe UI", Arial, sans-serif; font-size: 13px; }
+      .body { fill: #CFC8DC; font-family: "Segoe UI", Arial, sans-serif; font-size: 13.5px; }
+      .muted { fill: #8C84A6; font-family: "Segoe UI", Arial, sans-serif; font-size: 12.5px; }
+      .mono { fill: #F3B749; font-family: "Consolas", "Courier New", monospace; font-size: 13.5px; font-weight: 700; }
+      .label { fill: #B8B0C9; font-family: "Segoe UI", Arial, sans-serif; font-size: 12.5px; font-weight: 600; }
+      .pill { fill: #221A36; stroke: #3A3153; stroke-width: 1; }
+      .pilltext { fill: #D8D1E6; font-family: "Segoe UI", Arial, sans-serif; font-size: 12.5px; }
+      .accent { fill: #E2263F; }
+      .gold { fill: #F3B749; }
+      .green { fill: #58B98A; }
+      .line { stroke: #8C84A6; stroke-width: 1.6; fill: none; marker-end: url(#arrow); }
+      .dot { fill: #E2263F; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1200" height="720" rx="0"/>
+
+  <!-- Header -->
+  <rect x="64" y="52" width="52" height="8" rx="4" class="accent"/>
+  <text x="64" y="92" class="title">Architettura di MangaTrack</text>
+  <text x="64" y="118" class="subtitle">React SPA su Vercel, dati e autenticazione su Supabase, catalogo esterno via API.</text>
+
+  <!-- Browser / client panel -->
+  <rect x="64" y="150" width="330" height="440" rx="18" class="panel"/>
+  <circle cx="92" cy="182" r="7" class="accent"/>
+  <text x="110" y="188" class="h">Browser · React 18</text>
+  <text x="88" y="213" class="muted">SPA · build Vite · hosting Vercel</text>
+
+  <rect x="88" y="235" width="76" height="30" rx="15" class="pill"/>
+  <text x="126" y="255" text-anchor="middle" class="pilltext">Home</text>
+  <rect x="172" y="235" width="84" height="30" rx="15" class="pill"/>
+  <text x="214" y="255" text-anchor="middle" class="pilltext">Libreria</text>
+  <rect x="264" y="235" width="74" height="30" rx="15" class="pill"/>
+  <text x="301" y="255" text-anchor="middle" class="pilltext">Cerca</text>
+  <rect x="88" y="273" width="76" height="30" rx="15" class="pill"/>
+  <text x="126" y="293" text-anchor="middle" class="pilltext">Social</text>
+  <rect x="172" y="273" width="96" height="30" rx="15" class="pill"/>
+  <text x="220" y="293" text-anchor="middle" class="pilltext">Impostazioni</text>
+
+  <line x1="88" y1="327" x2="370" y2="327" stroke="#2C2440" stroke-width="1.2"/>
+
+  <text x="88" y="355" class="mono">src/api/supabase.js</text>
+  <text x="88" y="376" class="body">client REST scritto a mano</text>
+  <text x="88" y="396" class="muted">q / ins / upd / del · JWT su ogni richiesta</text>
+
+  <text x="88" y="432" class="mono">src/api/manga.js</text>
+  <text x="88" y="453" class="body">ricerca, copertine, sinossi e totali</text>
+  <text x="88" y="473" class="muted">AniList + lookup on-demand</text>
+
+  <rect x="88" y="502" width="282" height="62" rx="12" fill="#1D1730" stroke="#3A3153" stroke-width="1"/>
+  <text x="104" y="526" class="label">Stato UI</text>
+  <text x="104" y="547" class="muted">React state + i18n IT/EN · sessione persistente</text>
+
+  <!-- Supabase panel -->
+  <rect x="806" y="150" width="330" height="170" rx="18" class="panel"/>
+  <circle cx="834" cy="182" r="7" class="green"/>
+  <text x="852" y="188" class="h">Supabase</text>
+  <text x="830" y="213" class="muted">backend as a service</text>
+  <text x="830" y="242" class="body">• Auth · JWT + refresh token</text>
+  <text x="830" y="266" class="body">• PostgREST → PostgreSQL</text>
+  <text x="830" y="290" class="body">• Row Level Security · 15 policy</text>
+  <text x="830" y="310" class="muted">• Storage · bucket avatar</text>
+
+  <!-- Vercel function panel -->
+  <rect x="806" y="355" width="330" height="170" rx="18" class="panel"/>
+  <circle cx="834" cy="387" r="7" class="gold"/>
+  <text x="852" y="393" class="h">Vercel Serverless</text>
+  <text x="830" y="418" class="muted">GET /api/totals?title=…</text>
+  <text x="830" y="445" class="body">MangaDex · Kitsu · Jikan · MangaUpdates</text>
+  <text x="830" y="469" class="body">fetch in parallelo + timeout brevi</text>
+  <text x="830" y="493" class="body">cache in memoria 1 h + cache CDN</text>
+  <text x="830" y="513" class="muted">aggregate MangaDex per le serie in corso</text>
+
+  <!-- AniList panel -->
+  <rect x="806" y="560" width="330" height="96" rx="18" class="panel"/>
+  <circle cx="834" cy="592" r="7" class="accent"/>
+  <text x="852" y="598" class="h">AniList GraphQL</text>
+  <text x="830" y="622" class="body">ricerca · tendenze · copertine · sinossi</text>
+  <text x="830" y="642" class="muted">fallback: Kitsu REST</text>
+
+  <!-- Arrows -->
+  <path class="line" d="M 394 210 L 796 210"/>
+  <rect x="545" y="189" width="100" height="20" rx="6" fill="#0B0714"/>
+  <text x="595" y="203" text-anchor="middle" class="label">REST + JWT</text>
+
+  <path class="line" d="M 394 440 L 796 440"/>
+  <rect x="537" y="419" width="116" height="20" rx="6" fill="#0B0714"/>
+  <text x="595" y="433" text-anchor="middle" class="label">GET /api/totals</text>
+
+  <path class="line" d="M 394 608 L 796 608"/>
+  <rect x="553" y="587" width="84" height="20" rx="6" fill="#0B0714"/>
+  <text x="595" y="601" text-anchor="middle" class="label">GraphQL</text>
+
+  <!-- Footer -->
+  <text x="64" y="676" class="muted">Deploy automatico da GitHub su Vercel · dati gestiti da Supabase · nessun server Express da mantenere.</text>
+  <text x="1136" y="676" text-anchor="end" class="muted">MangaTrack · Tecnologie Web</text>
+</svg>

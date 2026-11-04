@@ -48,25 +48,7 @@ Chi legge manga li segue spesso su siti, app e formati diversi: volumi cartacei,
 
 ## 2. Architettura
 
-```
-┌──────────────────────────────┐        ┌───────────────────────────────────────┐
-│  Browser – React 18 (SPA)    │        │  Supabase (backend as a service)      │
-│  Vite build, hosting Vercel  │  REST  │  • Auth (JWT, refresh token)          │
-│                              │───────▶│  • PostgREST → PostgreSQL + RLS       │
-│  src/api/supabase.js         │        │  • Storage (bucket avatars)           │
-│  (client REST q/ins/upd/del) │        └───────────────────────────────────────┘
-│                              │
-│                              │        ┌───────────────────────────────────────┐
-│  src/api/manga.js            │───────▶│  Vercel Serverless Function           │
-│                              │  GET   │  api/totals.js                        │
-│                              │        │  aggrega MangaDex + Kitsu + Jikan,    │
-│                              │        │  cache in memoria + cache CDN         │
-│                              │        └───────────────────────────────────────┘
-│                              │
-│                              │───────▶  AniList GraphQL (ricerca, tendenze)
-│                              │          └─ fallback: Kitsu REST
-└──────────────────────────────┘
-```
+![Architettura di MangaTrack: browser React, Supabase, funzione serverless Vercel e AniList](docs/diagrams/architecture.png)
 
 ### Backend
 
@@ -78,7 +60,7 @@ Il backend è composto da due parti.
    - le **policy Row Level Security** fanno rispettare le regole di accesso nel database: il JWT dell'utente identifica chi fa la richiesta (`auth.uid()`) e ognuno può inserire, modificare o eliminare solo le righe che gli appartengono;
    - **Auth** rilascia i JWT, che il client invia in ogni richiesta;
    - **Storage** conserva gli avatar nel bucket `avatars`.
-2. **Funzione serverless Vercel** `api/totals.js` (`GET /api/totals?title=...`): interroga in parallelo MangaDex, Kitsu e Jikan con un timeout di 4 s ciascuno, tiene il totale più alto di capitoli e volumi, valida l'input (400 o 405) e mette in cache il risultato (in memoria e con `s-maxage` sulla CDN). Per le serie in corso, per cui MangaDex lascia vuoti `lastChapter`/`lastVolume`, ricava i totali dall'endpoint `aggregate` dello stesso manga. Integra anche **MangaUpdates**: per le serie in corso usa il conteggio capitoli più aggiornato e per i titoli sconosciuti alle altre fonti ne legge `latest_chapter` e i volumi dallo `status`; i volumi di MangaUpdates non sovrascrivono quelli già noti. In questo modo il browser fa una sola richiesta invece di tre e la logica di aggregazione sta in un punto solo. Se la funzione non risponde, per esempio con `npm run dev`, il client ripiega sulle chiamate dirette.
+2. **Funzione serverless Vercel** `api/totals.js` (`GET /api/totals?title=...`): interroga in parallelo MangaDex, Kitsu e Jikan con timeout brevi (1,2–2,5 s) per non bloccare l'attesa, tiene il totale più alto di capitoli e volumi, valida l'input (400 o 405) e mette in cache il risultato (in memoria e con `s-maxage` sulla CDN). Per le serie in corso, per cui MangaDex lascia vuoti `lastChapter`/`lastVolume`, ricava i totali dall'endpoint `aggregate` dello stesso manga. Integra anche **MangaUpdates**: per le serie in corso usa il conteggio capitoli più aggiornato e per i titoli sconosciuti alle altre fonti ne legge `latest_chapter` e i volumi dallo `status`; i volumi di MangaUpdates non sovrascrivono quelli già noti. In questo modo il browser fa una sola richiesta invece di tre e la logica di aggregazione sta in un punto solo. Se la funzione non risponde, per esempio con `npm run dev`, il client ripiega sulle chiamate dirette.
 
 ### Modello dei dati
 
