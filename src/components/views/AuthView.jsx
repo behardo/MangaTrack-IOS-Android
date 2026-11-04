@@ -27,7 +27,6 @@ const T = {
     ],
     pickUser: 'Scegli il tuo username per iniziare.',
     cont: 'Continua',
-    replay: "↻ Rivedi l'intro",
     errFill: 'Compila tutti i campi',
     errUser: 'Scegli un username',
     errEmail: 'Inserisci la tua email per recuperare la password',
@@ -74,7 +73,6 @@ const T = {
     ],
     pickUser: 'Choose your username to get started.',
     cont: 'Continue',
-    replay: '↻ Replay intro',
     errFill: 'Fill in all the fields',
     errUser: 'Choose a username',
     errEmail: 'Enter your email to reset your password',
@@ -156,7 +154,6 @@ export default function AuthView() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [legal, setLegal] = useState(null);
-  const [introNonce, setIntroNonce] = useState(0);
   const [iconNonce, setIconNonce] = useState(0);
   const [qNonce, setQNonce] = useState(0);
   const [flipNonce, setFlipNonce] = useState(0);
@@ -204,7 +201,7 @@ export default function AuthView() {
       clearTimeout(timer);
       frames.forEach(cancelAnimationFrame);
     };
-  }, [screen, introNonce]);
+  }, [screen]);
 
   function clearMessages() {
     setError('');
@@ -217,12 +214,6 @@ export default function AuthView() {
     setReg(registerMode);
     setQNonce(n => n + 1);
     setIconNonce(n => n + 1);
-  }
-
-  function replayIntro() {
-    clearMessages();
-    setScreen('intro');
-    setIntroNonce(n => n + 1);
   }
 
   function setMode(registerMode) {
@@ -314,7 +305,7 @@ export default function AuthView() {
           <div className="login-phone">
             {/* ---------------- Intro / onboarding ---------------- */}
             <div
-              key={`intro-${introNonce}`}
+              key="intro"
               className={`scr phx o4 scrn${screen === 'intro' ? ' on' : ''} go4`}
             >
               <div className="hd">
@@ -556,12 +547,6 @@ export default function AuthView() {
               </span>
             </div>
           </div>
-
-          {!needsUsername && (
-            <button type="button" className="replay" onClick={replayIntro}>
-              {t.replay}
-            </button>
-          )}
         </div>
       </div>
 

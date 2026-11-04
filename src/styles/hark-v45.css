@@ -258,6 +258,10 @@
 .shelf .o{gap:9px}
 .shelf .o.on{transform:scale(1.12);z-index:2;box-shadow:5px -3px 0 rgba(0,0,0,.45)}
 .shelf .o:not(.on){opacity:.55}
+/* I dorsi sono verticali: senza questa altezza minima le etichette lunghe
+   ("Mollati", "Reading", "Dropped") uscivano tagliate dal riquadro. */
+.shelf .o{min-height:101px}
+.shelf .o .w{font-size:12px}
 
 /* ===== v54 E4 empty library ===== */
 .e4w{grid-column:1/-1;text-align:center;padding:4px 0 10px}

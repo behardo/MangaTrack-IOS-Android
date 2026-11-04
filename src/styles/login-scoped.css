@@ -44,7 +44,6 @@
 .login-root .dots i.on{width:22px;border-radius:4px;background:var(--red)}
 .login-root .cta{height:50px;border:2.5px solid var(--ink);border-radius:26px;background:var(--red);color:var(--ink);font-family:var(--display);font-size:17px;cursor:pointer;box-shadow:0 4px 0 var(--red-d);width:100%}
 .login-root .ghost4{background:none;border:0;color:var(--muted);font-weight:900;font-size:13px;cursor:pointer;margin-top:10px;width:100%}
-.login-root .replay{display:block;margin:10px auto 0;background:none;border:2px solid var(--line);color:var(--muted);font-weight:900;padding:6px 14px;border-radius:20px;cursor:pointer;font-size:12px}
 .login-root .cov{border:2.5px solid var(--ink);border-radius:3px;object-fit:cover;background:#000}
 .login-root .ht{background-image:var(--ht)}
 .login-root .o1 .stage{flex:1;position:relative;margin:56px 18px 0}
