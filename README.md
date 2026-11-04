@@ -11,7 +11,6 @@ Autore: **Behar Myzyri**
 
 - **App online:** https://manga-track-ios.vercel.app
 - **Presentazione:** [`docs/MangaTrack_Behar_Myzyri.pdf`](docs/MangaTrack_Behar_Myzyri.pdf) (versione PowerPoint con demo video: [`docs/MangaTrack_Behar_Myzyri.pptx`](docs/MangaTrack_Behar_Myzyri.pptx))
-- **Scaletta della demo:** [`docs/DEMO.md`](docs/DEMO.md)
 
 | Home | Libreria | Social |
 |---|---|---|
