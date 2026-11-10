@@ -24,6 +24,11 @@ export default function RecommendModal({ initialManga, initialFriend, onClose, o
   const [selectedIds, setSelectedIds] = useState(() => (
     initialFriend?.id ? new Set([initialFriend.id]) : new Set()
   ));
+  // Keep the profile objects for selected users so the button label still shows
+  // their username after the search that found them has been cleared.
+  const [selectedProfiles, setSelectedProfiles] = useState(() => (
+    initialFriend?.id ? { [initialFriend.id]: initialFriend } : {}
+  ));
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -119,11 +124,7 @@ export default function RecommendModal({ initialManga, initialFriend, onClose, o
   }, [friendsList, searchResults, friendSearch]);
 
   const selectedNames = [...selectedIds]
-    .map(id => (
-      friendsList.find(friend => friend.id === id) ||
-      searchResults.find(friend => friend.id === id) ||
-      (initialFriend?.id === id ? initialFriend : null)
-    )?.username)
+    .map(id => selectedProfiles[id]?.username)
     .filter(Boolean);
 
   const buttonLabel = selectedIds.size === 1
@@ -141,14 +142,27 @@ export default function RecommendModal({ initialManga, initialFriend, onClose, o
     }, 320);
   }
 
-  const toggleFriend = id => {
+  const toggleFriend = friend => {
     if (sending || sent) return;
+    const isSelected = selectedIds.has(friend.id);
     setSelectedIds(previous => {
       const next = new Set(previous);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (isSelected) next.delete(friend.id);
+      else next.add(friend.id);
       return next;
     });
+    setSelectedProfiles(previous => {
+      const next = { ...previous };
+      if (isSelected) delete next[friend.id];
+      else next[friend.id] = friend;
+      return next;
+    });
+  };
+
+  const handleFriendKeyDown = (event, friend) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    toggleFriend(friend);
   };
 
   const handleSend = async () => {
@@ -221,7 +235,12 @@ export default function RecommendModal({ initialManga, initialFriend, onClose, o
                     key={friend.id}
                     className={`csf ${selected ? 'on' : ''}`}
                     data-n={friend.username}
-                    onClick={() => toggleFriend(friend.id)}
+                    role="button"
+                    tabIndex={0}
+                    aria-pressed={selected}
+                    aria-label={`${selected ? 'Deseleziona' : 'Seleziona'} ${friend.username}`}
+                    onClick={() => toggleFriend(friend)}
+                    onKeyDown={event => handleFriendKeyDown(event, friend)}
                   >
                     <div className="a">
                       <Avatar
