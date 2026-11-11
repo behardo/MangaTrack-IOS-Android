@@ -3,7 +3,7 @@ import { onActivateKey } from '../../utils/a11y';
 
 const STATUS_MAP = {
   all: { label: 'Tutti', db: null, height: '100%', bg: 'var(--ink)', color: 'var(--bg)' },
-  read: { label: 'Leggo', db: 'In lettura', height: '82%', bg: 'var(--red)', color: 'var(--ink)' },
+  read: { label: 'In lettura', db: 'In lettura', height: '92%', bg: 'var(--red)', color: 'var(--ink)' },
   done: { label: 'Finiti', db: 'Completati', height: '92%', bg: 'var(--green)', color: 'var(--bg)' },
   pause: { label: 'Pausa', db: 'In pausa', height: '76%', bg: 'var(--amber)', color: 'var(--bg)' },
   drop: { label: 'Mollati', db: 'Abbandonati', height: '70%', bg: 'var(--card2)', color: 'var(--ink)' },

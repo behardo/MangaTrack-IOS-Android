@@ -53,7 +53,6 @@ export const APP_DICT = {
   "LA TUA LIBRERIA MANGA": "YOUR MANGA LIBRARY",
   "La tua": "Your",
   "Lasciato perdere": "Gave up",
-  "Leggo": "Reading",
   "Libreria": "Library",
   "Libreria, attività, follow e profilo verranno cancellati per sempre. Non è reversibile.": "Library, activity, follows and profile will be deleted forever. This can't be undone.",
   "Lista desideri": "Wishlist",
