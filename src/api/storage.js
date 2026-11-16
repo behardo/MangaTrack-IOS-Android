@@ -1,5 +1,14 @@
 import { SB_URL, SB_KEY, api, upd } from "./supabase.js";
 
+// Only the formats the settings screen accepts. Deriving the extension from
+// the MIME type (instead of the file name) keeps the storage path predictable
+// and stops a renamed executable from being uploaded as an "image".
+const AVATAR_TYPES = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
 export async function uploadAvatar(file, session) {
   if (!file) throw new Error("Nessun file selezionato");
   if (file.size > 2 * 1024 * 1024) {
@@ -7,7 +16,10 @@ export async function uploadAvatar(file, session) {
   }
   if (!session?.user?.id) throw new Error("Utente non autenticato");
 
-  const ext = file.name.split(".").pop().toLowerCase();
+  const ext = AVATAR_TYPES[(file.type || "").toLowerCase()];
+  if (!ext) {
+    throw new Error("Formato non supportato (usa JPG, PNG o WebP)");
+  }
   const path = `${session.user.id}/avatar.${ext}`;
 
   const res = await fetch(`${SB_URL}/storage/v1/object/avatars/${path}`, {

@@ -144,6 +144,15 @@ Nel client va usata **solo la chiave anon** (pubblica, protetta dalle policy RLS
 3. In **Settings → Environment Variables** aggiungi `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` per Production e Preview, poi rifai il deploy.
 4. Su Supabase, in **Authentication → URL Configuration**, imposta come Site URL e Redirect URL il dominio Vercel, così i link di conferma e di recupero password puntano all'app pubblicata.
 
+### Sicurezza
+
+- **In transito**: Vercel forza HTTPS e aggiunge HSTS (`max-age=63072000; includeSubDomains; preload`).
+- **Header**: `vercel.json` imposta `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` e una **Content-Security-Policy** che consente solo gli host usati dall'app (Supabase, AniList, Kitsu, MangaDex, Jikan, Google Fonts).
+- **Autorizzazione**: l'app usa solo la chiave **anon**; i permessi veri sono nelle policy **RLS** di PostgreSQL. Lo schema e le policy sono documentati in [`docs/supabase-rls.sql`](docs/supabase-rls.sql) (file di riferimento, non eseguito automaticamente).
+- **Password**: la registrazione richiede almeno 8 caratteri; il login accetta anche le password più corte già esistenti e il cambio password dalle Impostazioni richiede 8 caratteri con almeno un numero.
+- **Upload avatar**: solo JPG, PNG o WebP fino a 2 MB; l'estensione del file salvato deriva dal MIME, non dal nome.
+- **Limiti dichiarati**: nessun rate limiting applicativo su `/api/totals` (mitigato dalla cache CDN e dai limiti delle API esterne); la sessione è conservata in `localStorage`, quindi la CSP e l'escaping di React sono le difese contro un eventuale XSS.
+
 ---
 
 ## 5. Limiti noti

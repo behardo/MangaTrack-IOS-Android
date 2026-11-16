@@ -29,6 +29,7 @@ const T = {
     cont: 'Continua',
     errFill: 'Compila tutti i campi',
     errUser: 'Scegli un username',
+    errPass: 'La password deve avere almeno 8 caratteri',
     errEmail: 'Inserisci la tua email per recuperare la password',
     resetSent: 'Ti abbiamo inviato un link per reimpostare la password.',
     errCred: 'Email o password non corretti.',
@@ -75,6 +76,7 @@ const T = {
     cont: 'Continue',
     errFill: 'Fill in all the fields',
     errUser: 'Choose a username',
+    errPass: 'Password must be at least 8 characters long',
     errEmail: 'Enter your email to reset your password',
     resetSent: 'We sent you a password reset link.',
     errCred: 'Wrong email or password.',
@@ -274,6 +276,13 @@ export default function AuthView() {
       return;
     }
 
+    // Only new accounts are held to the 8-character minimum: existing users
+    // may have shorter passwords and must still be able to log in.
+    if (reg && password.length < 8) {
+      setError(t.errPass);
+      return;
+    }
+
     setSubmitting(true);
     try {
       if (reg) {
@@ -460,6 +469,7 @@ export default function AuthView() {
                           value={password}
                           onChange={e => { setPassword(e.target.value); clearMessages(); }}
                           autoComplete={reg ? 'new-password' : 'current-password'}
+                          minLength={reg ? 8 : undefined}
                         />
                       </div>
                     </>
