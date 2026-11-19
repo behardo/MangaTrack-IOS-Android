@@ -166,7 +166,7 @@ Nel client va usata **solo la chiave anon** (pubblica, protetta dalle policy RLS
 
 ## 6. Progetto di partenza
 
-MangaTrack è la riscrittura in React di una versione precedente dell'app scritta dallo stesso autore, una PWA con service worker di cache. Rispetto a quella versione sono stati aggiunti o rifatti:
+MangaTrack è la riscrittura in React di un prototipo statico precedente, partito a sua volta da un progetto Java. Il prototipo era un singolo file HTML con dati dimostrativi in `localStorage` e nessuna chiamata di rete: questa versione introduce un backend reale. Rispetto a quel prototipo sono stati aggiunti o rifatti:
 architettura a componenti React e Vite, client REST verso Supabase con autenticazione e refresh token, modello relazionale con 5 tabelle e RLS, funzioni social (follow, consigli e attività), fallback AniList → Kitsu, aggregazione dei totali tramite funzione serverless, traduzione IT/EN e deploy su Vercel.
 
 ---
@@ -178,7 +178,9 @@ Si dichiara che per la realizzazione del presente progetto software ci si è avv
 - **OpenCode** (agente di programmazione AI): utilizzato come supporto alla scrittura e al refactoring del codice dei componenti React e del client API, e per individuare e correggere bug.
 - **Hark** (assistente AI): utilizzato per la prima stesura della funzione serverless `api/totals.js`, poi rivista, testata e integrata dall'autore; per la redazione di questo README e per la preparazione della presentazione (struttura delle slide, grafica, video demo).
 
-Il progetto non è il risultato di una generazione automatica: è stato sviluppato e iterato in più settimane a partire da una versione precedente dell'app scritta dall'autore, come documentato dalla cronologia dei commit del repository.
+Il progetto non è il risultato di una generazione automatica: è stato sviluppato e iterato in più settimane a partire dal prototipo statico citato nella sezione 6, come documentato dalla cronologia dei commit del repository.
+
+La fase precedente (prototipo statico, non oggetto di questa consegna) è stata realizzata con il supporto di Claude.
 
 L'idea dell'applicazione, i requisiti, il modello dei dati, l'architettura del software e la logica di business rimangono interamente frutto dell'elaborazione originale dell'autore.
 
