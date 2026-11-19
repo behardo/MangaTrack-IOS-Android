@@ -176,7 +176,9 @@ architettura a componenti React e Vite, client REST verso Supabase con autentica
 Si dichiara che per la realizzazione del presente progetto software ci si è avvalsi dell'ausilio dei seguenti strumenti di Intelligenza Artificiale Generativa:
 
 - **OpenCode** (agente di programmazione AI): utilizzato come supporto alla scrittura e al refactoring del codice dei componenti React e del client API, e per individuare e correggere bug.
-- **Hark** (assistente AI): utilizzato per scrivere la funzione serverless `api/totals.js`, redigere questo README e preparare la presentazione (struttura delle slide, grafica, video demo).
+- **Hark** (assistente AI): utilizzato per la prima stesura della funzione serverless `api/totals.js`, poi rivista, testata e integrata dall'autore; per la redazione di questo README e per la preparazione della presentazione (struttura delle slide, grafica, video demo).
+
+Il progetto non è il risultato di una generazione automatica: è stato sviluppato e iterato in più settimane a partire da una versione precedente dell'app scritta dall'autore, come documentato dalla cronologia dei commit del repository.
 
 L'idea dell'applicazione, i requisiti, il modello dei dati, l'architettura del software e la logica di business rimangono interamente frutto dell'elaborazione originale dell'autore.
 
