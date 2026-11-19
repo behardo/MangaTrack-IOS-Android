@@ -168,7 +168,7 @@ Nel client va usata **solo la chiave anon** (pubblica, protetta dalle policy RLS
 
 MangaTrack non nasce da zero: è la terza versione dello stesso progetto, e ogni passaggio è servito a superare un limite della precedente.
 
-1. **Desktop JavaFX (maggio 2026)** — la prima versione funzionante, scritta in Java 21 con JavaFX, Maven, SQLite e l'API Jikan: libreria, ricerca online, dettaglio, statistiche, preferiti e impostazioni. Il social funzionava scambiandosi file JSON di profilo, quindi senza server. Il progetto è conservato in un repository privato.
+1. **Desktop JavaFX (maggio 2026)** — la prima versione funzionante, realizzata per il corso di Programmazione a Oggetti con il supporto di Claude: Java 21, JavaFX, Maven, SQLite e l'API Jikan, con libreria, ricerca online, dettaglio, statistiche, preferiti e impostazioni. Il social funzionava scambiandosi file JSON di profilo, quindi senza server. Il progetto è conservato in un repository privato.
 2. **PWA pre-React (giugno–agosto 2026)** — riscritta per il browser e il telefono: un unico `index.html` di circa 100 KB con `manifest.json`, service worker, autenticazione Supabase e chiamate ad AniList. Sono 67 commit, ancora consultabili nel ramo `backup-pre-react`.
 3. **React + Vite (ottobre–novembre 2026)** — la versione di questa consegna: architettura a componenti, client REST verso Supabase con refresh token, modello relazionale con 5 tabelle e policy RLS, social con follow e consigli, fallback AniList → Kitsu, aggregazione dei totali tramite funzione serverless, traduzione IT/EN, test automatici, CI e deploy su Vercel.
 
@@ -180,13 +180,12 @@ Il passaggio da una versione all'altra è stato dettato da esigenze concrete: il
 
 Si dichiara che per la realizzazione del presente progetto software ci si è avvalsi dell'ausilio dei seguenti strumenti di Intelligenza Artificiale Generativa:
 
-- **OpenCode** (agente di programmazione AI): utilizzato come supporto alla scrittura e al refactoring del codice dei componenti React e del client API, e per individuare e correggere bug.
+- **Claude** (assistente AI): utilizzato per la versione desktop JavaFX (maggio 2026), realizzata per il corso di Programmazione a Oggetti, e per la PWA pre-React (giugno–agosto 2026). In entrambi i casi il lavoro è stato iterativo — prompt, correzione degli errori, test e integrazione — e non una generazione automatica in un'unica richiesta.
 - **Hark** (assistente AI): utilizzato per la prima stesura della funzione serverless `api/totals.js`, poi rivista, testata e integrata dall'autore; per la redazione di questo README e per la preparazione della presentazione (struttura delle slide, grafica, video demo).
+- **OpenCode** (agente di programmazione AI): utilizzato come supporto alla scrittura e al refactoring del codice dei componenti React e del client API, e per individuare e correggere bug.
 
 Il progetto non è il risultato di una generazione automatica: è stato sviluppato e iterato in più mesi attraverso tre versioni, come documentato dalla cronologia dei commit (67 nel ramo `backup-pre-react`, oltre 100 complessivi).
 
-Le fasi precedenti (desktop JavaFX e PWA pre-React, non oggetto di questa consegna) sono descritte nella sezione 6; per la PWA pre-React mi sono avvalso del supporto di Claude.
-
-L'idea dell'applicazione, i requisiti, il modello dei dati, l'architettura del software e la logica di business rimangono interamente frutto dell'elaborazione originale dell'autore.
+L'idea dell'applicazione, i requisiti, il modello dei dati, le scelte di architettura e la logica di business sono frutto dell'elaborazione dell'autore. Il codice prodotto con l'AI è stato letto, corretto, testato e integrato, e l'autore è in grado di illustrarne il funzionamento.
 
 L'autore dichiara di aver effettuato personalmente la verifica funzionale e di sicurezza del codice generato, assumendosi la piena e personale responsabilità del progetto presentato.
